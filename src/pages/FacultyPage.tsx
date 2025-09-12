@@ -163,9 +163,14 @@ const FacultyPage = () => {
                     <p className="text-sm text-gray-600">{faculty.title}</p>
                   </div>
                 </div>
-                <span className="bg-green-100 text-green-800 px-2 py-1 text-xs font-medium rounded-full">
-                  active
-                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="bg-green-100 text-green-800 px-2 py-1 text-xs font-medium rounded-full">
+                    active
+                  </span>
+                  <button className="text-gray-400 hover:text-gray-600">
+                    <MoreHorizontal className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-2 mb-4">
@@ -262,9 +267,14 @@ const FacultyPage = () => {
                       <p className="text-sm text-gray-500">{faculty.title}</p>
                     </div>
                   </div>
-                  <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded-full">
-                    inactive
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded-full">
+                      inactive
+                    </span>
+                    <button className="text-gray-400 hover:text-gray-600">
+                      <MoreHorizontal className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2 mb-4">

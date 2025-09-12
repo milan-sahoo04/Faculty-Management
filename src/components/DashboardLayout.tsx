@@ -17,10 +17,16 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+}
+
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const navigation = [
+  const navigation: NavItem[] = [
     { name: "Home", href: "/home", icon: Home },
     { name: "Overview", href: "/overview", icon: BarChart3 },
     { name: "Faculty", href: "/faculty", icon: Users },
@@ -72,6 +78,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </button>
 
           <div className="flex-1 px-4 flex justify-between items-center">
+            {/* Search */}
             <div className="flex-1 max-w-lg">
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -85,6 +92,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               </div>
             </div>
 
+            {/* Notifications + User */}
             <div className="ml-4 flex items-center space-x-4">
               <button className="relative text-gray-400 hover:text-gray-500">
                 <Bell className="h-6 w-6" />
@@ -117,7 +125,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   );
 };
 
-const SidebarContent: React.FC<{ navigation: any[] }> = ({ navigation }) => (
+const SidebarContent: React.FC<{ navigation: NavItem[] }> = ({
+  navigation,
+}) => (
   <div className="flex flex-col flex-grow bg-white border-r border-gray-200 pt-5 pb-4 overflow-y-auto">
     <div className="flex items-center flex-shrink-0 px-4">
       <Target className="h-8 w-8 text-indigo-600" />

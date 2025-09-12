@@ -11,11 +11,24 @@ import {
   BookOpen,
 } from "lucide-react";
 
-const CategoriesPage = () => {
-  const [showModal, setShowModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<any>(null);
+// Category type definition
+type Category = {
+  id: number;
+  name: string;
+  description: string;
+  color: string;
+  facultyCount: number;
+  sessionCount: number;
+  subjects: string[];
+  status: "active" | "inactive";
+  createdDate: string;
+};
 
-  const categories = [
+const CategoriesPage: React.FC = () => {
+  const [showModal, setShowModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  const categories: Category[] = [
     {
       id: 1,
       name: "Mathematics",
