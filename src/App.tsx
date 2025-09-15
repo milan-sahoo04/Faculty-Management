@@ -1,10 +1,5 @@
 import React, { useState } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./components/DashboardLayout";
 import HomePage from "./pages/HomePage";
@@ -25,18 +20,16 @@ function App() {
   }
 
   return (
-    <Router>
-      <DashboardLayout>
-        <Routes>
-          <Route path="/" element={<Navigate to="/home" replace />} />
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/overview" element={<OverviewPage />} />
-          <Route path="/faculty" element={<FacultyPage />} />
-          <Route path="/categories" element={<CategoriesPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-        </Routes>
-      </DashboardLayout>
-    </Router>
+    <DashboardLayout>
+      <Routes>
+        <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="/home" element={<HomePage />} />
+        <Route path="/overview" element={<OverviewPage />} />
+        <Route path="/faculty" element={<FacultyPage />} />
+        <Route path="/categories" element={<CategoriesPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
+      </Routes>
+    </DashboardLayout>
   );
 }
 
