@@ -12,6 +12,21 @@ import {
   Filter,
   Eye,
 } from "lucide-react";
+import { motion } from "framer-motion";
+
+// Placeholder functions for handling user actions
+const handleExportReport = () => console.log("Exporting report...");
+const handleFilter = () => console.log("Opening filter options...");
+const handleViewAllFaculty = () =>
+  console.log("Navigating to all faculty performance reports...");
+const handleExportCategoryData = () =>
+  console.log("Exporting category data...");
+const handleCreateCustomReport = () =>
+  console.log("Opening custom report creation tool...");
+const handleViewReport = (reportName) =>
+  console.log(`Viewing report: ${reportName}`);
+const handleDownloadReport = (reportName) =>
+  console.log(`Downloading report: ${reportName}`);
 
 const ReportsPage = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("month");
@@ -37,7 +52,7 @@ const ReportsPage = () => {
       iconColor: "text-green-600",
     },
     {
-      title: "Average Session Duration",
+      title: "Avg. Session Duration",
       value: "2h 15m",
       change: "-5.1%",
       trend: "down",
@@ -195,32 +210,41 @@ const ReportsPage = () => {
   ];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto font-sans bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900">
             Reports & Analytics
           </h1>
           <p className="text-gray-600 mt-1">
             Comprehensive insights into faculty performance and session
-            analytics
+            analytics.
           </p>
         </div>
         <div className="flex space-x-3">
-          <button className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center">
+          <motion.button
+            onClick={handleFilter}
+            className="bg-white border border-gray-300 text-gray-700 px-5 py-2.5 rounded-xl font-medium hover:bg-gray-100 transition-colors flex items-center shadow-sm"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
             <Filter className="w-4 h-4 mr-2" />
             Filter
-          </button>
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center">
+          </motion.button>
+          <motion.button
+            onClick={handleExportReport}
+            className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-indigo-700 transition-colors flex items-center shadow-lg"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
             <Download className="w-4 h-4 mr-2" />
             Export Report
-          </button>
+          </motion.button>
         </div>
       </div>
-
       {/* Period and Category Selectors */}
-      <div className="flex items-center space-x-4 mb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-4 mb-8">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Time Period
@@ -228,7 +252,7 @@ const ReportsPage = () => {
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
           >
             <option value="week">This Week</option>
             <option value="month">This Month</option>
@@ -243,7 +267,7 @@ const ReportsPage = () => {
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
           >
             <option value="all">All Categories</option>
             <option value="cs">Computer Science</option>
@@ -253,31 +277,38 @@ const ReportsPage = () => {
           </select>
         </div>
       </div>
-
+      ---
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <h2 className="text-xl font-bold text-gray-900 mb-4">Key Metrics</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {reportMetrics.map((metric, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="flex items-center justify-between mb-4">
+          <motion.div
+            key={index}
+            className="bg-white rounded-xl shadow-md border border-gray-100 p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+          >
+            <div className="flex items-start justify-between">
               <div
-                className={`w-12 h-12 ${metric.iconBg} rounded-lg flex items-center justify-center`}
+                className={`w-12 h-12 ${metric.iconBg} rounded-xl flex items-center justify-center`}
               >
                 <metric.icon className={`w-6 h-6 ${metric.iconColor}`} />
               </div>
             </div>
-            <div>
+            <div className="mt-6">
               <p className="text-sm text-gray-600 mb-1">{metric.title}</p>
-              <p className="text-2xl font-bold text-gray-900 mb-2">
+              <p className="text-3xl font-bold text-gray-900 mb-2">
                 {metric.value}
               </p>
-              <div className="flex items-center">
+              <div className="flex items-center space-x-1">
                 {metric.trend === "up" ? (
-                  <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+                  <TrendingUp className="w-4 h-4 text-green-500" />
                 ) : (
-                  <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
+                  <TrendingDown className="w-4 h-4 text-red-500" />
                 )}
                 <p
-                  className={`text-sm ${
+                  className={`text-sm font-medium ${
                     metric.trend === "up" ? "text-green-600" : "text-red-600"
                   }`}
                 >
@@ -285,18 +316,19 @@ const ReportsPage = () => {
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
-
-      <div className="grid lg:grid-cols-2 gap-8 mb-8">
+      ---
+      {/* Charts & Performance */}
+      <div className="grid lg:grid-cols-2 gap-8 mb-12">
         {/* Session Trends Chart */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="bg-white rounded-xl shadow-md border p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900">
               Session Trends
             </h2>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-4">
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-indigo-500 rounded-full mr-2"></div>
                 <span className="text-sm text-gray-600">Sessions</span>
@@ -310,41 +342,40 @@ const ReportsPage = () => {
           <div className="space-y-4">
             {sessionTrends.map((trend, index) => (
               <div key={index} className="flex items-center justify-between">
-                <div className="flex items-center space-x-4 flex-1">
-                  <span className="text-sm font-medium text-gray-700 w-8">
-                    {trend.month}
-                  </span>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-indigo-500 h-2 rounded-full"
-                          style={{ width: `${(trend.sessions / 156) * 100}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-sm text-gray-600 w-8">
-                        {trend.sessions}
-                      </span>
+                <span className="text-sm font-medium text-gray-700 w-12">
+                  {trend.month}
+                </span>
+                <div className="flex-1 mx-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-indigo-500 h-2 rounded-full"
+                        style={{ width: `${(trend.sessions / 156) * 100}%` }}
+                      ></div>
                     </div>
+                    <span className="text-sm text-gray-600 w-8">
+                      {trend.sessions}
+                    </span>
                   </div>
                 </div>
-                <div className="ml-4">
-                  <span className="text-sm font-medium text-green-600">
-                    {trend.completion}%
-                  </span>
-                </div>
+                <span className="text-sm font-semibold text-green-600 w-16 text-right">
+                  {trend.completion}%
+                </span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Top Faculty Performance */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="bg-white rounded-xl shadow-md border p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900">
               Top Faculty Performance
             </h2>
-            <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+            <button
+              onClick={handleViewAllFaculty}
+              className="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors"
+            >
               View All
             </button>
           </div>
@@ -352,11 +383,11 @@ const ReportsPage = () => {
             {facultyPerformance.map((faculty, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs font-medium">
+                  <div className="w-9 h-9 bg-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-sm font-bold">
                       {index + 1}
                     </span>
                   </div>
@@ -367,26 +398,24 @@ const ReportsPage = () => {
                     <p className="text-xs text-gray-500">{faculty.category}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="flex items-center space-x-4">
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-gray-900">
-                        {faculty.sessions}
-                      </p>
-                      <p className="text-xs text-gray-500">Sessions</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-gray-900">
-                        {faculty.completion}%
-                      </p>
-                      <p className="text-xs text-gray-500">Complete</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-gray-900">
-                        {faculty.rating}
-                      </p>
-                      <p className="text-xs text-gray-500">Rating</p>
-                    </div>
+                <div className="flex items-center space-x-5 text-right">
+                  <div className="flex flex-col items-center">
+                    <p className="text-sm font-semibold text-gray-900">
+                      {faculty.sessions}
+                    </p>
+                    <p className="text-xs text-gray-500">Sessions</p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <p className="text-sm font-semibold text-green-600">
+                      {faculty.completion}%
+                    </p>
+                    <p className="text-xs text-gray-500">Complete</p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <p className="text-sm font-semibold text-yellow-600">
+                      {faculty.rating}
+                    </p>
+                    <p className="text-xs text-gray-500">Rating</p>
                   </div>
                 </div>
               </div>
@@ -394,45 +423,52 @@ const ReportsPage = () => {
           </div>
         </div>
       </div>
-
-      {/* Category Performance */}
-      <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+      ---
+      {/* Category Performance Table */}
+      <h2 className="text-xl font-bold text-gray-900 mb-4">
+        Category Performance Overview
+      </h2>
+      <div className="bg-white rounded-xl shadow-md border p-6 mb-12">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Category Performance Overview
-          </h2>
-          <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+          <p className="text-gray-600 text-sm">
+            A breakdown of key metrics by subject category.
+          </p>
+          <motion.button
+            onClick={handleExportCategoryData}
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors"
+            whileHover={{ scale: 1.05 }}
+          >
             Export Data
-          </button>
+          </motion.button>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full">
+          <table className="min-w-full table-auto">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+              <tr className="border-b border-gray-200 text-left">
+                <th className="text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
                   Category
                 </th>
-                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                <th className="text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
                   Sessions
                 </th>
-                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                <th className="text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
                   Hours
                 </th>
-                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                <th className="text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
                   Completion
                 </th>
-                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
-                  Avg Rating
+                <th className="text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                  Avg. Rating
                 </th>
-                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
+                <th className="text-xs font-medium text-gray-500 uppercase tracking-wider py-3">
                   Progress
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {categoryPerformance.map((category, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="py-4">
+                <tr key={index} className="hover:bg-gray-50 transition-colors">
+                  <td className="py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div
                         className={`w-3 h-3 ${category.color} rounded-full mr-3`}
@@ -442,18 +478,18 @@ const ReportsPage = () => {
                       </span>
                     </div>
                   </td>
-                  <td className="py-4 text-sm text-gray-900">
+                  <td className="py-4 text-sm text-gray-900 whitespace-nowrap">
                     {category.sessions}
                   </td>
-                  <td className="py-4 text-sm text-gray-900">
+                  <td className="py-4 text-sm text-gray-900 whitespace-nowrap">
                     {category.hours}
                   </td>
-                  <td className="py-4">
+                  <td className="py-4 whitespace-nowrap">
                     <span className="text-sm font-medium text-green-600">
                       {category.completion}%
                     </span>
                   </td>
-                  <td className="py-4">
+                  <td className="py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <span className="text-sm text-gray-900 mr-1">
                         {category.avgRating}
@@ -464,7 +500,7 @@ const ReportsPage = () => {
                     </div>
                   </td>
                   <td className="py-4">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-xs">
+                    <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-[150px]">
                       <div
                         className={`h-2 rounded-full ${category.color}`}
                         style={{ width: `${category.completion}%` }}
@@ -477,49 +513,65 @@ const ReportsPage = () => {
           </table>
         </div>
       </div>
-
+      ---
       {/* Report Templates */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <h2 className="text-xl font-bold text-gray-900 mb-4">Report Templates</h2>
+      <div className="bg-white rounded-xl shadow-md border p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Report Templates
-          </h2>
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+          <p className="text-gray-600 text-sm">
+            Generate or download pre-configured reports.
+          </p>
+          <motion.button
+            onClick={handleCreateCustomReport}
+            className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-indigo-700 transition-colors shadow-lg"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
             Create Custom Report
-          </button>
+          </motion.button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {reportTemplates.map((template, index) => (
             <div
               key={index}
-              className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+              className="border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-shadow duration-300"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <template.icon className="w-5 h-5 text-gray-600" />
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <template.icon className="w-6 h-6 text-gray-600" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900">
+                    <h3 className="text-base font-semibold text-gray-900">
                       {template.name}
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-sm text-gray-500 mt-1">
                       {template.description}
                     </p>
                   </div>
                 </div>
-                <div className="flex space-x-2">
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <Eye className="w-4 h-4" />
-                  </button>
-                  <button className="text-gray-400 hover:text-indigo-600">
-                    <Download className="w-4 h-4" />
-                  </button>
+                <div className="flex space-x-2 flex-shrink-0">
+                  <motion.button
+                    onClick={() => handleViewReport(template.name)}
+                    className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                    whileHover={{ scale: 1.1 }}
+                  >
+                    <Eye className="w-5 h-5" />
+                  </motion.button>
+                  <motion.button
+                    onClick={() => handleDownloadReport(template.name)}
+                    className="p-2 rounded-full text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 transition-colors"
+                    whileHover={{ scale: 1.1 }}
+                  >
+                    <Download className="w-5 h-5" />
+                  </motion.button>
                 </div>
               </div>
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>Last generated: {template.lastGenerated}</span>
-                <span>Size: {template.size}</span>
+              <div className="flex items-center justify-between text-xs text-gray-500 border-t pt-4 mt-4 border-gray-100">
+                <span className="font-medium">
+                  Last Generated: {template.lastGenerated}
+                </span>
+                <span className="font-medium">Size: {template.size}</span>
               </div>
             </div>
           ))}
