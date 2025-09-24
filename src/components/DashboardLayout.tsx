@@ -1,6 +1,6 @@
 // src/components/DashboardLayout.tsx
 import React, { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, Outlet } from "react-router-dom";
 import {
   Home,
   BarChart3,
@@ -15,31 +15,29 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface DashboardLayoutProps {
-  children: React.ReactNode;
-}
-
 interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 }
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+const DashboardLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
+  // Updated navigation paths to be relative to the parent "/dashboard" route
   const navigation: NavItem[] = [
-    { name: "Home", href: "/home", icon: Home },
-    { name: "Overview", href: "/overview", icon: BarChart3 },
-    { name: "Faculty", href: "/faculty", icon: Users },
-    { name: "Categories", href: "/categories", icon: FolderOpen },
-    { name: "Reports", href: "/reports", icon: FileText },
-    { name: "Calender", href: "/calender", icon: Target },
-    { name: "Contacts", href: "/contacts", icon: Users },
+    { name: "Home", href: "/dashboard/home", icon: Home },
+    { name: "Overview", href: "/dashboard/overview", icon: BarChart3 },
+    { name: "Faculty", href: "/dashboard/faculty", icon: Users },
+    { name: "Categories", href: "/dashboard/categories", icon: FolderOpen },
+    { name: "Reports", href: "/dashboard/reports", icon: FileText },
+    { name: "Calender", href: "/dashboard/calender", icon: Target },
+    { name: "Contacts", href: "/dashboard/contacts", icon: Users },
+    { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
   ];
 
-  const isHomePage = location.pathname === "/home";
+  const isHomePage = location.pathname === "/dashboard/home";
 
   return (
     <div className="h-screen bg-gray-50 flex overflow-hidden">
@@ -118,12 +116,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 isHomePage ? "ml-4" : "ml-auto"
               }`}
             >
-              <button className="relative text-gray-400 hover:text-blue-500 transition-colors">
+              <NavLink
+                to="/dashboard/notifications"
+                className="relative text-gray-400 hover:text-blue-500 transition-colors"
+              >
                 <Bell className="h-6 w-6" />
                 <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-xs font-medium text-white">1</span>
                 </span>
-              </button>
+              </NavLink>
 
               <div className="relative flex items-center space-x-3">
                 <div className="flex items-center justify-center h-8 w-8 bg-blue-700 rounded-full">
@@ -142,7 +143,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
         {/* Page content */}
         <main className="flex-1 relative overflow-y-auto focus:outline-none">
-          {children}
+          <Outlet />
         </main>
       </div>
     </div>
