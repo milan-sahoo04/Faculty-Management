@@ -16,10 +16,15 @@ import {
 import { motion } from "framer-motion";
 
 // Placeholder for your navigation logic
-const handleCreateSession = () =>
-  console.log("Navigating to Create Session page...");
-const handleViewDashboard = () => console.log("Navigating to Dashboard...");
-const handleNavigateTo = (path) => console.log(`Navigating to ${path}...`);
+// If you are using a router like React Router DOM, you would use a hook here:
+// import { useNavigate } from 'react-router-dom';
+// const navigate = useNavigate();
+// const handleNavigateTo = (path) => navigate(path);
+const handleNavigateTo = (path) => {
+  console.log(`Navigating to ${path}...`);
+  // Add your actual routing logic here
+  // e.g., window.location.href = path;
+};
 
 const HomePage = () => {
   const steps = [
@@ -62,6 +67,7 @@ const HomePage = () => {
       icon: Users,
       iconBg: "bg-purple-100",
       iconColor: "text-purple-600",
+      path: "/faculty",
     },
     {
       title: "Session Scheduling",
@@ -69,6 +75,7 @@ const HomePage = () => {
       icon: Calendar,
       iconBg: "bg-blue-100",
       iconColor: "text-blue-600",
+      path: "/schedule",
     },
     {
       title: "Analytics & Reports",
@@ -76,6 +83,7 @@ const HomePage = () => {
       icon: BarChart3,
       iconBg: "bg-green-100",
       iconColor: "text-green-600",
+      path: "/reports",
     },
     {
       title: "Documentation",
@@ -83,6 +91,7 @@ const HomePage = () => {
       icon: FileText,
       iconBg: "bg-yellow-100",
       iconColor: "text-yellow-600",
+      path: "/documentation",
     },
   ];
 
@@ -165,7 +174,7 @@ const HomePage = () => {
             </p>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
               <motion.button
-                onClick={handleCreateSession}
+                onClick={() => handleNavigateTo("/schedule")} // Corrected
                 className="bg-white text-purple-600 px-8 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-colors flex items-center shadow-lg"
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95, y: 0 }}
@@ -174,7 +183,7 @@ const HomePage = () => {
                 Create Session
               </motion.button>
               <motion.button
-                onClick={handleViewDashboard}
+                onClick={() => handleNavigateTo("/dashboard")} // Corrected
                 className="border border-white border-opacity-30 text-white px-8 py-3 rounded-xl font-semibold hover:bg-white hover:bg-opacity-10 transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -274,6 +283,7 @@ const HomePage = () => {
                 <motion.div
                   key={index}
                   className="bg-white rounded-xl shadow-md border border-gray-200 p-6 flex flex-col items-start hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                  onClick={() => handleNavigateTo(feature.path)}
                   whileHover={{
                     y: -5,
                     boxShadow: "0 10px 20px rgba(0,0,0,0.05)",

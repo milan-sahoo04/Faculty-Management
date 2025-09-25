@@ -1,6 +1,15 @@
 // src/pages/LoginPage.tsx
 import React, { useState, useEffect } from "react";
-import { Target, Mail, Lock } from "lucide-react";
+import {
+  Target,
+  Mail,
+  Lock,
+  CircleCheck, // Make sure CircleCheck is imported for the welcome animation
+  FlaskConical, // Assuming these are still used in the left section as per previous solution
+  ClipboardList,
+  Dna,
+  BarChart2,
+} from "lucide-react";
 import { auth, db, googleProvider } from "../firebase/firebaseConfig";
 import {
   signInWithPopup,
@@ -15,6 +24,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
+import loginIllustration from "../assets/login.png"; // Your custom login image
 
 interface LoginPageProps {
   onLogin: () => void;
@@ -76,7 +86,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       const result = await signInWithPopup(auth, googleProvider);
       console.log("Google user:", result.user);
       setWelcome(true);
-      onLogin(); // App handles routing
+      setTimeout(onLogin, 1500); // Delay for welcome animation
     } catch (err) {
       console.error(err);
       setError(friendlyFirebaseMessage(err));
@@ -94,7 +104,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       const cred = await signInWithEmailAndPassword(auth, email, password);
       console.log("Signed in:", cred.user);
       setWelcome(true);
-      onLogin();
+      setTimeout(onLogin, 1500); // Delay for welcome animation
     } catch (err) {
       console.error(err);
       setError(friendlyFirebaseMessage(err));
@@ -103,9 +113,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
   };
 
-  /* ---------- Phone OTP ---------- */
+  /* ---------- Phone OTP (Only if isSignup is true) ---------- */
   const setupRecaptcha = () => {
     if ((window as any).recaptchaVerifier) {
+      (window as any).recaptchaVerifier.clear(); // Clear existing if any
       (window as any).recaptchaVerifier = null;
     }
     (window as any).recaptchaVerifier = new RecaptchaVerifier(
@@ -165,7 +176,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
   };
 
-  /* ---------- Finish Registration ---------- */
+  /* ---------- Finish Registration (Only if isSignup is true) ---------- */
   const finishRegistration = async () => {
     setError(null);
     if (!phoneVerified) {
@@ -188,14 +199,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       const emailCredential = EmailAuthProvider.credential(email, password);
       await linkWithCredential(currentUser, emailCredential);
 
-      await setDoc(doc(db, "users", currentUser.uid), {
-        uid: currentUser.uid,
-        email,
-        phone: currentUser.phoneNumber || phone,
-        fullName,
-        department: department || null,
-        createdAt: serverTimestamp(),
-      });
+      await setDoc(
+        doc(db, "users", currentUser.uid),
+        {
+          uid: currentUser.uid,
+          email,
+          phone: currentUser.phoneNumber || phone,
+          fullName,
+          department: department || null,
+          createdAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
 
       try {
         await sendEmailVerification(currentUser);
@@ -205,7 +220,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       }
 
       setWelcome(true);
-      onLogin();
+      setTimeout(onLogin, 1500); // Delay for welcome animation
     } catch (err) {
       console.error("finishRegistration error:", err);
       setError(friendlyFirebaseMessage(err));
@@ -272,6 +287,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             >
               {/* Header */}
               <div className="text-center mb-8">
+                {/* Image added here, above the main title */}
+                <img
+                  src={loginIllustration}
+                  alt="Login illustration"
+                  className="mx-auto mb-4 w-32 h-32 object-contain" // Adjust size as needed
+                />
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
                   <Target className="w-8 h-8 text-white" />
                 </div>

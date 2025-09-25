@@ -1,5 +1,5 @@
 // src/components/DashboardLayout.tsx
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { NavLink, useLocation, Outlet } from "react-router-dom";
 import {
   Home,
@@ -12,6 +12,8 @@ import {
   Target,
   Menu,
   X,
+  Settings,
+  LogOut,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -110,34 +112,8 @@ const DashboardLayout: React.FC = () => {
               </div>
             )}
 
-            {/* This div handles alignment when search is not present */}
-            <div
-              className={`flex items-center space-x-4 ${
-                isHomePage ? "ml-4" : "ml-auto"
-              }`}
-            >
-              <NavLink
-                to="/dashboard/notifications"
-                className="relative text-gray-400 hover:text-blue-500 transition-colors"
-              >
-                <Bell className="h-6 w-6" />
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full flex items-center justify-center">
-                  <span className="text-xs font-medium text-white">1</span>
-                </span>
-              </NavLink>
-
-              <div className="relative flex items-center space-x-3">
-                <div className="flex items-center justify-center h-8 w-8 bg-blue-700 rounded-full">
-                  <span className="text-sm font-medium text-white">AU</span>
-                </div>
-                <div className="hidden md:block">
-                  <div className="text-sm font-medium text-gray-700">
-                    Admin User
-                  </div>
-                  <div className="text-xs text-gray-500">Administrator</div>
-                </div>
-              </div>
-            </div>
+            {/* User Profile Dropdown */}
+            <UserProfileDropdown />
           </div>
         </div>
 
@@ -146,6 +122,90 @@ const DashboardLayout: React.FC = () => {
           <Outlet />
         </main>
       </div>
+    </div>
+  );
+};
+
+const UserProfileDropdown = () => {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    console.log("User logged out");
+    // Replace with your actual logout logic (e.g., API call, state update, redirect)
+    // For example, if using React Router:
+    // navigate('/login');
+  };
+
+  return (
+    <div
+      ref={dropdownRef}
+      className={`relative flex items-center space-x-3 ml-4`}
+    >
+      <button
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+        className="flex items-center space-x-3 focus:outline-none"
+      >
+        <img
+          className="h-9 w-9 rounded-full bg-blue-700 flex items-center justify-center text-white"
+          src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+          alt="User Profile"
+        />
+        <div className="hidden md:block text-left">
+          <div className="text-sm font-medium text-gray-700">Admin User</div>
+          <div className="text-xs text-gray-500">Administrator</div>
+        </div>
+      </button>
+
+      {/* Dropdown Menu */}
+      <AnimatePresence>
+        {dropdownOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="absolute top-12 right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+          >
+            <NavLink
+              to="/dashboard/profile"
+              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              onClick={() => setDropdownOpen(false)}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Your Profile
+            </NavLink>
+            <NavLink
+              to="/dashboard/settings"
+              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              onClick={() => setDropdownOpen(false)}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </NavLink>
+            <button
+              onClick={handleLogout}
+              className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-t border-gray-100"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

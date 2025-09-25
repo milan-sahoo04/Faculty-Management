@@ -1,3 +1,4 @@
+// src/pages/FacultyPage.tsx
 import React, { useState } from "react";
 import {
   Plus,
@@ -13,85 +14,113 @@ import {
   Info,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import AddFacultyModal from "../components/AddFacultyModal"; // Import the new modal
 
 // Placeholder functions for your navigation and data handlers
-const handleAddFaculty = () => console.log("Navigating to Add Faculty form...");
-const handleEditFaculty = (id) =>
-  console.log(`Editing faculty member with ID: ${id}`);
-const handleDeleteFaculty = (id) =>
-  console.log(`Deleting faculty member with ID: ${id}`);
-const handleViewFacultyProfile = (id) =>
+const handleViewFacultyProfile = (id: number) =>
   console.log(`Navigating to profile for faculty ID: ${id}`);
-const handleMoreOptions = (id) =>
+const handleMoreOptions = (id: number) =>
   console.log(`Showing more options for faculty ID: ${id}`);
+
+interface FacultyMember {
+  id: number;
+  name: string;
+  title: string;
+  email: string;
+  phone: string;
+  location: string;
+  joinDate: string;
+  status: "active" | "inactive";
+  subjects: string[];
+  sessions: number;
+  rating: number;
+  initials: string;
+  color: string;
+}
+
+const initialFacultyMembers: FacultyMember[] = [
+  {
+    id: 1,
+    name: "Dr. Sarah Johnson",
+    title: "Professor",
+    email: "sarah.johnson@university.edu",
+    phone: "+1 (555) 123-4567",
+    location: "New York, NY",
+    joinDate: "Joined 2018-08-15",
+    status: "active",
+    subjects: ["Advanced Calculus", "Linear Algebra", "Statistics"],
+    sessions: 45,
+    rating: 4.8,
+    initials: "SJ",
+    color: "bg-blue-600",
+  },
+  {
+    id: 2,
+    name: "Prof. Michael Chen",
+    title: "Associate Professor",
+    email: "michael.chen@university.edu",
+    phone: "+1 (555) 234-5678",
+    location: "Boston, MA",
+    joinDate: "Joined 2020-01-10",
+    status: "active",
+    subjects: ["Quantum Physics", "Thermodynamics"],
+    sessions: 32,
+    rating: 4.6,
+    initials: "MC",
+    color: "bg-green-600",
+  },
+  {
+    id: 3,
+    name: "Dr. Emily Davis",
+    title: "Assistant Professor",
+    email: "emily.davis@university.edu",
+    phone: "+1 (555) 345-6789",
+    location: "San Francisco, CA",
+    joinDate: "Joined 2021-09-01",
+    status: "active",
+    subjects: ["Data Structures", "Algorithms", "Machine Learning"],
+    sessions: 28,
+    rating: 4.9,
+    initials: "ED",
+    color: "bg-purple-600",
+  },
+  {
+    id: 4,
+    name: "Dr. Robert Wilson",
+    title: "Professor",
+    email: "robert.wilson@university.edu",
+    phone: "+1 (555) 456-7890",
+    location: "Chicago, IL",
+    joinDate: "Joined 2017-03-20",
+    status: "inactive",
+    subjects: ["Organic Chemistry", "Biochemistry"],
+    sessions: 52,
+    rating: 4.7,
+    initials: "RW",
+    color: "bg-indigo-600",
+  },
+];
 
 const FacultyPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDepartment, setSelectedDepartment] =
     useState("All Departments");
+  const [facultyMembers, setFacultyMembers] = useState<FacultyMember[]>(
+    initialFacultyMembers
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const facultyMembers = [
-    {
-      id: 1,
-      name: "Dr. Sarah Johnson",
-      title: "Professor",
-      email: "sarah.johnson@university.edu",
-      phone: "+1 (555) 123-4567",
-      location: "New York, NY",
-      joinDate: "Joined 2018-08-15",
-      status: "active",
-      subjects: ["Advanced Calculus", "Linear Algebra", "Statistics"],
-      sessions: 45,
-      rating: 4.8,
-      initials: "SJ",
-      color: "bg-blue-600",
-    },
-    {
-      id: 2,
-      name: "Prof. Michael Chen",
-      title: "Associate Professor",
-      email: "michael.chen@university.edu",
-      phone: "+1 (555) 234-5678",
-      location: "Boston, MA",
-      joinDate: "Joined 2020-01-10",
-      status: "active",
-      subjects: ["Quantum Physics", "Thermodynamics"],
-      sessions: 32,
-      rating: 4.6,
-      initials: "MC",
-      color: "bg-green-600",
-    },
-    {
-      id: 3,
-      name: "Dr. Emily Davis",
-      title: "Assistant Professor",
-      email: "emily.davis@university.edu",
-      phone: "+1 (555) 345-6789",
-      location: "San Francisco, CA",
-      joinDate: "Joined 2021-09-01",
-      status: "active",
-      subjects: ["Data Structures", "Algorithms", "Machine Learning"],
-      sessions: 28,
-      rating: 4.9,
-      initials: "ED",
-      color: "bg-purple-600",
-    },
-    {
-      id: 4,
-      name: "Dr. Robert Wilson",
-      title: "Professor",
-      email: "robert.wilson@university.edu",
-      phone: "+1 (555) 456-7890",
-      location: "Chicago, IL",
-      joinDate: "Joined 2017-03-20",
-      status: "inactive",
-      subjects: ["Organic Chemistry", "Biochemistry"],
-      sessions: 52,
-      rating: 4.7,
-      initials: "RW",
-      color: "bg-indigo-600",
-    },
-  ];
+  const handleAddFaculty = (newFaculty: FacultyMember) => {
+    setFacultyMembers((prevMembers) => [...prevMembers, newFaculty]);
+    console.log("Added new faculty:", newFaculty);
+  };
+
+  const handleDeleteFaculty = (id: number) => {
+    setFacultyMembers((prevMembers) =>
+      prevMembers.filter((member) => member.id !== id)
+    );
+    console.log(`Deleted faculty member with ID: ${id}`);
+  };
 
   const getSubjectColor = (subject: string) => {
     const colors: { [key: string]: string } = {
@@ -142,7 +171,7 @@ const FacultyPage = () => {
           </p>
         </div>
         <motion.button
-          onClick={handleAddFaculty}
+          onClick={() => setIsModalOpen(true)}
           className="bg-indigo-600 text-white px-5 py-2 rounded-xl font-medium hover:bg-indigo-700 transition-colors flex items-center shadow-lg"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -275,7 +304,7 @@ const FacultyPage = () => {
                   <motion.button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleEditFaculty(faculty.id);
+                      // No longer needed: handleEditFaculty(faculty.id);
                     }}
                     className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
                     whileHover={{ scale: 1.1 }}
@@ -394,7 +423,7 @@ const FacultyPage = () => {
                     <motion.button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleEditFaculty(faculty.id);
+                        // No longer needed: handleEditFaculty(faculty.id);
                       }}
                       className="p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                       whileHover={{ scale: 1.1 }}
@@ -418,6 +447,13 @@ const FacultyPage = () => {
           </div>
         </div>
       )}
+
+      {/* The Modal Component */}
+      <AddFacultyModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onAddFaculty={handleAddFaculty}
+      />
     </div>
   );
 };
