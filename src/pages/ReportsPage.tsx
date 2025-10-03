@@ -14,8 +14,242 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 
-// Placeholder functions for handling user actions
-const handleExportReport = () => console.log("Exporting report...");
+// --- Data Definitions (Moved outside component for better organization/reusability) ---
+
+const reportMetricsData = [
+  {
+    title: "Total Sessions",
+    value: "1,248",
+    change: "+12.5%",
+    trend: "up",
+    icon: Calendar,
+    iconBg: "bg-blue-100",
+    iconColor: "text-blue-600",
+  },
+  {
+    title: "Faculty Utilization",
+    value: "87.3%",
+    change: "+3.2%",
+    trend: "up",
+    icon: Users,
+    iconBg: "bg-green-100",
+    iconColor: "text-green-600",
+  },
+  {
+    title: "Avg. Session Duration",
+    value: "2h 15m",
+    change: "-5.1%",
+    trend: "down",
+    icon: Clock,
+    iconBg: "bg-purple-100",
+    iconColor: "text-purple-600",
+  },
+  {
+    title: "Completion Rate",
+    value: "94.7%",
+    change: "+2.8%",
+    trend: "up",
+    icon: TrendingUp,
+    iconBg: "bg-orange-100",
+    iconColor: "text-orange-600",
+  },
+];
+
+const categoryPerformanceData = [
+  {
+    category: "Computer Science",
+    sessions: 128,
+    hours: 384,
+    completion: 96.2,
+    avgRating: 4.8,
+    color: "bg-purple-500",
+  },
+  {
+    category: "Mathematics",
+    sessions: 85,
+    hours: 255,
+    completion: 94.1,
+    avgRating: 4.6,
+    color: "bg-blue-500",
+  },
+  {
+    category: "Chemistry",
+    sessions: 72,
+    hours: 216,
+    completion: 93.8,
+    avgRating: 4.7,
+    color: "bg-orange-500",
+  },
+  {
+    category: "Physics",
+    sessions: 64,
+    hours: 192,
+    completion: 92.5,
+    avgRating: 4.5,
+    color: "bg-green-500",
+  },
+  {
+    category: "Biology",
+    sessions: 58,
+    hours: 174,
+    completion: 95.1,
+    avgRating: 4.9,
+    color: "bg-teal-500",
+  },
+  {
+    category: "English Literature",
+    sessions: 45,
+    hours: 135,
+    completion: 89.3,
+    avgRating: 4.4,
+    color: "bg-red-500",
+  },
+];
+
+const facultyPerformanceData = [
+  {
+    name: "Dr. Emily Davis",
+    sessions: 28,
+    hours: 84,
+    completion: 98.2,
+    rating: 4.9,
+    category: "Computer Science",
+  },
+  {
+    name: "Dr. Sarah Johnson",
+    sessions: 25,
+    hours: 75,
+    completion: 96.8,
+    rating: 4.8,
+    category: "Mathematics",
+  },
+  {
+    name: "Prof. Amanda Brown",
+    sessions: 22,
+    hours: 66,
+    completion: 94.5,
+    rating: 4.7,
+    category: "English Literature",
+  },
+  {
+    name: "Prof. Michael Chen",
+    sessions: 18,
+    hours: 54,
+    completion: 95.6,
+    rating: 4.6,
+    category: "Physics",
+  },
+  {
+    name: "Dr. Robert Wilson",
+    sessions: 15,
+    hours: 45,
+    completion: 93.3,
+    rating: 4.7,
+    category: "Chemistry",
+  },
+];
+
+const sessionTrendsData = [
+  { month: "Jan", sessions: 95, completion: 91.2 },
+  { month: "Feb", sessions: 108, completion: 92.5 },
+  { month: "Mar", sessions: 124, completion: 94.1 },
+  { month: "Apr", sessions: 132, completion: 93.8 },
+  { month: "May", sessions: 145, completion: 95.2 },
+  { month: "Jun", sessions: 156, completion: 94.7 },
+];
+
+const reportTemplatesData = [
+  {
+    name: "Monthly Faculty Report",
+    description:
+      "Comprehensive monthly overview of faculty performance and session statistics",
+    lastGenerated: "2024-01-15",
+    size: "2.4 MB",
+    icon: FileText,
+  },
+  {
+    name: "Category Performance Analysis",
+    description:
+      "Detailed breakdown of performance metrics by subject category",
+    lastGenerated: "2024-01-10",
+    size: "1.8 MB",
+    icon: PieChart,
+  },
+  {
+    name: "Session Utilization Report",
+    description:
+      "Analysis of session scheduling efficiency and resource utilization",
+    lastGenerated: "2024-01-08",
+    size: "3.1 MB",
+    icon: BarChart3,
+  },
+  {
+    name: "Faculty Individual Reports",
+    description: "Personal performance reports for individual faculty members",
+    lastGenerated: "2024-01-05",
+    size: "5.2 MB",
+    icon: Users,
+  },
+];
+
+// --- Export Functionality (New/Modified) ---
+
+/**
+ * Converts data to CSV format and triggers a download.
+ * Includes Key Metrics and Category Performance in the CSV.
+ */
+const handleExportReport = (metrics, categories, period) => {
+  // 1. Key Metrics Header
+  let csvContent =
+    "Key Metrics for " +
+    period.charAt(0).toUpperCase() +
+    period.slice(1) +
+    "\n";
+  csvContent += "Metric,Value,Change\n";
+
+  // 2. Key Metrics Data
+  metrics.forEach((metric) => {
+    csvContent += `"${metric.title.replace(/"/g, '""')}",${metric.value},${
+      metric.change
+    }\n`;
+  });
+
+  csvContent += "\n\nCategory Performance Overview\n";
+
+  // 3. Category Performance Header
+  const categoryHeaders = [
+    "Category",
+    "Sessions",
+    "Hours",
+    "Completion (%)",
+    "Avg. Rating",
+  ];
+  csvContent += categoryHeaders.join(",") + "\n";
+
+  // 4. Category Performance Data
+  categories.forEach((category) => {
+    csvContent += `"${category.category.replace(/"/g, '""')}",${
+      category.sessions
+    },${category.hours},${category.completion},${category.avgRating}\n`;
+  });
+
+  // 5. Create Blob and Download Link
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute(
+    "download",
+    `Faculty_Report_${new Date().toISOString().slice(0, 10)}.csv`
+  );
+  link.style.visibility = "hidden"; // Hide the element
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link); // Clean up
+  console.log("Exporting report...");
+};
+
+// Placeholder functions for other actions
 const handleFilter = () => console.log("Opening filter options...");
 const handleViewAllFaculty = () =>
   console.log("Navigating to all faculty performance reports...");
@@ -28,186 +262,11 @@ const handleViewReport = (reportName) =>
 const handleDownloadReport = (reportName) =>
   console.log(`Downloading report: ${reportName}`);
 
+// --- ReportsPage Component ---
+
 const ReportsPage = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("month");
   const [selectedCategory, setSelectedCategory] = useState("all");
-
-  const reportMetrics = [
-    {
-      title: "Total Sessions",
-      value: "1,248",
-      change: "+12.5%",
-      trend: "up",
-      icon: Calendar,
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-600",
-    },
-    {
-      title: "Faculty Utilization",
-      value: "87.3%",
-      change: "+3.2%",
-      trend: "up",
-      icon: Users,
-      iconBg: "bg-green-100",
-      iconColor: "text-green-600",
-    },
-    {
-      title: "Avg. Session Duration",
-      value: "2h 15m",
-      change: "-5.1%",
-      trend: "down",
-      icon: Clock,
-      iconBg: "bg-purple-100",
-      iconColor: "text-purple-600",
-    },
-    {
-      title: "Completion Rate",
-      value: "94.7%",
-      change: "+2.8%",
-      trend: "up",
-      icon: TrendingUp,
-      iconBg: "bg-orange-100",
-      iconColor: "text-orange-600",
-    },
-  ];
-
-  const categoryPerformance = [
-    {
-      category: "Computer Science",
-      sessions: 128,
-      hours: 384,
-      completion: 96.2,
-      avgRating: 4.8,
-      color: "bg-purple-500",
-    },
-    {
-      category: "Mathematics",
-      sessions: 85,
-      hours: 255,
-      completion: 94.1,
-      avgRating: 4.6,
-      color: "bg-blue-500",
-    },
-    {
-      category: "Chemistry",
-      sessions: 72,
-      hours: 216,
-      completion: 93.8,
-      avgRating: 4.7,
-      color: "bg-orange-500",
-    },
-    {
-      category: "Physics",
-      sessions: 64,
-      hours: 192,
-      completion: 92.5,
-      avgRating: 4.5,
-      color: "bg-green-500",
-    },
-    {
-      category: "Biology",
-      sessions: 58,
-      hours: 174,
-      completion: 95.1,
-      avgRating: 4.9,
-      color: "bg-teal-500",
-    },
-    {
-      category: "English Literature",
-      sessions: 45,
-      hours: 135,
-      completion: 89.3,
-      avgRating: 4.4,
-      color: "bg-red-500",
-    },
-  ];
-
-  const facultyPerformance = [
-    {
-      name: "Dr. Emily Davis",
-      sessions: 28,
-      hours: 84,
-      completion: 98.2,
-      rating: 4.9,
-      category: "Computer Science",
-    },
-    {
-      name: "Dr. Sarah Johnson",
-      sessions: 25,
-      hours: 75,
-      completion: 96.8,
-      rating: 4.8,
-      category: "Mathematics",
-    },
-    {
-      name: "Prof. Amanda Brown",
-      sessions: 22,
-      hours: 66,
-      completion: 94.5,
-      rating: 4.7,
-      category: "English Literature",
-    },
-    {
-      name: "Prof. Michael Chen",
-      sessions: 18,
-      hours: 54,
-      completion: 95.6,
-      rating: 4.6,
-      category: "Physics",
-    },
-    {
-      name: "Dr. Robert Wilson",
-      sessions: 15,
-      hours: 45,
-      completion: 93.3,
-      rating: 4.7,
-      category: "Chemistry",
-    },
-  ];
-
-  const sessionTrends = [
-    { month: "Jan", sessions: 95, completion: 91.2 },
-    { month: "Feb", sessions: 108, completion: 92.5 },
-    { month: "Mar", sessions: 124, completion: 94.1 },
-    { month: "Apr", sessions: 132, completion: 93.8 },
-    { month: "May", sessions: 145, completion: 95.2 },
-    { month: "Jun", sessions: 156, completion: 94.7 },
-  ];
-
-  const reportTemplates = [
-    {
-      name: "Monthly Faculty Report",
-      description:
-        "Comprehensive monthly overview of faculty performance and session statistics",
-      lastGenerated: "2024-01-15",
-      size: "2.4 MB",
-      icon: FileText,
-    },
-    {
-      name: "Category Performance Analysis",
-      description:
-        "Detailed breakdown of performance metrics by subject category",
-      lastGenerated: "2024-01-10",
-      size: "1.8 MB",
-      icon: PieChart,
-    },
-    {
-      name: "Session Utilization Report",
-      description:
-        "Analysis of session scheduling efficiency and resource utilization",
-      lastGenerated: "2024-01-08",
-      size: "3.1 MB",
-      icon: BarChart3,
-    },
-    {
-      name: "Faculty Individual Reports",
-      description:
-        "Personal performance reports for individual faculty members",
-      lastGenerated: "2024-01-05",
-      size: "5.2 MB",
-      icon: Users,
-    },
-  ];
 
   return (
     <div className="p-6 max-w-7xl mx-auto font-sans bg-gray-50 min-h-screen">
@@ -233,7 +292,14 @@ const ReportsPage = () => {
             Filter
           </motion.button>
           <motion.button
-            onClick={handleExportReport}
+            // UPDATED: Pass data and selectedPeriod to the export function
+            onClick={() =>
+              handleExportReport(
+                reportMetricsData,
+                categoryPerformanceData,
+                selectedPeriod
+              )
+            }
             className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-indigo-700 transition-colors flex items-center shadow-lg"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -277,11 +343,13 @@ const ReportsPage = () => {
           </select>
         </div>
       </div>
-      ---
+
+      {/* --- */}
+
       {/* Key Metrics */}
       <h2 className="text-xl font-bold text-gray-900 mb-4">Key Metrics</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        {reportMetrics.map((metric, index) => (
+        {reportMetricsData.map((metric, index) => (
           <motion.div
             key={index}
             className="bg-white rounded-xl shadow-md border border-gray-100 p-6"
@@ -319,7 +387,9 @@ const ReportsPage = () => {
           </motion.div>
         ))}
       </div>
-      ---
+
+      {/* --- */}
+
       {/* Charts & Performance */}
       <div className="grid lg:grid-cols-2 gap-8 mb-12">
         {/* Session Trends Chart */}
@@ -340,7 +410,7 @@ const ReportsPage = () => {
             </div>
           </div>
           <div className="space-y-4">
-            {sessionTrends.map((trend, index) => (
+            {sessionTrendsData.map((trend, index) => (
               <div key={index} className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700 w-12">
                   {trend.month}
@@ -380,7 +450,7 @@ const ReportsPage = () => {
             </button>
           </div>
           <div className="space-y-4">
-            {facultyPerformance.map((faculty, index) => (
+            {facultyPerformanceData.map((faculty, index) => (
               <div
                 key={index}
                 className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100"
@@ -423,7 +493,9 @@ const ReportsPage = () => {
           </div>
         </div>
       </div>
-      ---
+
+      {/* --- */}
+
       {/* Category Performance Table */}
       <h2 className="text-xl font-bold text-gray-900 mb-4">
         Category Performance Overview
@@ -466,7 +538,7 @@ const ReportsPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {categoryPerformance.map((category, index) => (
+              {categoryPerformanceData.map((category, index) => (
                 <tr key={index} className="hover:bg-gray-50 transition-colors">
                   <td className="py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -513,7 +585,9 @@ const ReportsPage = () => {
           </table>
         </div>
       </div>
-      ---
+
+      {/* --- */}
+
       {/* Report Templates */}
       <h2 className="text-xl font-bold text-gray-900 mb-4">Report Templates</h2>
       <div className="bg-white rounded-xl shadow-md border p-6">
@@ -531,7 +605,7 @@ const ReportsPage = () => {
           </motion.button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {reportTemplates.map((template, index) => (
+          {reportTemplatesData.map((template, index) => (
             <div
               key={index}
               className="border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-shadow duration-300"

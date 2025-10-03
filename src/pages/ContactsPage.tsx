@@ -9,23 +9,67 @@ import {
   Trash2,
   Edit,
   MoreVertical,
-  ChevronDown,
   Mail,
   Phone,
   Briefcase,
-  Users,
-  Calendar,
-  SquarePen,
-  Clock, // For Activity timeline event
+  Clock, // For Activity timeline event (general)
   Video, // For Video meeting activity
-  ListTodo, // For Task assigned activity
+  ListTodo, // For Task assigned activity/Code review
   FileText, // For Note added activity
   Eye, // For View Details
+  Calendar, // For general calendar event
+  SquarePen, // ADDED: Icon for 'Add Note' button in DetailedNotes
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// --- Dummy Data ---
-const allContacts = [
+// --- Type Definitions (for clarity) ---
+interface Activity {
+  id: number;
+  type: string;
+  description: string;
+  user: string;
+  date: string;
+  time: string;
+  icon: React.ElementType;
+  iconColor: string;
+  avatar: string;
+  duration?: string;
+}
+
+interface Note {
+  id: number;
+  text: string;
+  author: string;
+  timestamp: string;
+}
+
+interface Contact {
+  id: number;
+  name: string;
+  role: string;
+  company: string;
+  avatar: string;
+  email: string;
+  phone: string;
+  tags: string[];
+  status: string;
+  isFavorite: boolean;
+  notes: string;
+  created: string;
+  lastUpdated: string;
+  contactInfo: {
+    email: string;
+    phone: string;
+    company: string;
+    position: string;
+    tags: string[];
+  };
+  activities: Activity[];
+  detailedNotes: Note[];
+}
+
+// --- Dummy Data (Kept as is for functionality) ---
+const allContacts: Contact[] = [
   {
     id: 1,
     name: "Alex Morgan",
@@ -344,17 +388,303 @@ const allContacts = [
   },
 ];
 
+// --- ActivityTimeline Component (Reusable - KEPT AS IS) ---
+const ActivityTimeline = ({
+  activities,
+  limit,
+}: {
+  activities: Activity[];
+  limit?: number;
+}) => {
+  const displayedActivities = limit ? activities.slice(0, limit) : activities;
+
+  if (displayedActivities.length === 0) {
+    return (
+      <div className="text-center py-10 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+        <Calendar size={24} className="mx-auto mb-2" />
+        <p className="font-medium">No recent activity logged.</p>
+        <p className="text-sm">
+          Start a task, email, or meeting to update the timeline.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <h3 className="text-xl font-semibold text-gray-900">
+        {limit ? "Recent Activity" : "Activity Timeline"}
+      </h3>
+      <div className="relative border-l border-gray-200 ml-4 pl-6">
+        {displayedActivities.map((activity, index) => {
+          const Icon = activity.icon;
+          return (
+            <div key={activity.id} className="mb-8 flex">
+              {/* Icon Dot */}
+              <div className="absolute left-0 -ml-3.5 mt-1.5 flex items-center justify-center w-7 h-7 rounded-full bg-white ring-8 ring-white">
+                <Icon size={16} className={activity.iconColor} />
+              </div>
+
+              {/* Content */}
+              <div className="flex-grow">
+                <div className="flex items-start justify-between">
+                  <p className="text-sm font-medium text-gray-900">
+                    {activity.type}
+                    {activity.duration && (
+                      <span className="text-xs text-gray-500 ml-2">
+                        ({activity.duration})
+                      </span>
+                    )}
+                  </p>
+                  <time className="text-xs text-gray-500 whitespace-nowrap">
+                    {activity.date} at {activity.time}
+                  </time>
+                </div>
+                <p className="text-sm text-gray-600 mt-1">
+                  {activity.description}
+                </p>
+                <div className="flex items-center space-x-2 mt-2 text-xs text-gray-500">
+                  <img
+                    src={activity.avatar}
+                    alt={activity.user}
+                    className="w-5 h-5 rounded-full object-cover"
+                  />
+                  <span>Logged by {activity.user}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// --- DetailedNotes Component (Reusable - FIXED MISSING IMPORT) ---
+const DetailedNotes = ({ detailedNotes }: { detailedNotes: Note[] }) => {
+  const [newNote, setNewNote] = useState("");
+
+  const handleAddNote = () => {
+    if (newNote.trim()) {
+      console.log("Adding new note:", newNote);
+      // In a real app, you'd add this to state/send to API
+      setNewNote("");
+    }
+  };
+
+  if (detailedNotes.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="text-center py-10 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+          <FileText size={24} className="mx-auto mb-2" />
+          <p className="font-medium">No detailed notes recorded.</p>
+        </div>
+        {/* Note Input area for adding first note */}
+        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-sm">
+          <textarea
+            rows={3}
+            placeholder="Add a new note..."
+            value={newNote}
+            onChange={(e) => setNewNote(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
+          />
+          <div className="flex justify-end mt-3">
+            <button
+              onClick={handleAddNote}
+              disabled={!newNote.trim()}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300 transition-colors flex items-center space-x-1"
+            >
+              <SquarePen size={16} />
+              <span>Add Note</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Note Input Area */}
+      <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-sm">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Add Note</h3>
+        <textarea
+          rows={3}
+          placeholder="Type your new note here..."
+          value={newNote}
+          onChange={(e) => setNewNote(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
+        />
+        <div className="flex justify-end mt-3">
+          <button
+            onClick={handleAddNote}
+            disabled={!newNote.trim()}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300 transition-colors flex items-center space-x-1"
+          >
+            <SquarePen size={16} />
+            <span>Add Note</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Existing Notes List */}
+      <h3 className="text-xl font-semibold text-gray-900">All Notes</h3>
+      <div className="space-y-4">
+        {detailedNotes.map((note) => (
+          <div
+            key={note.id}
+            className="bg-white p-4 border border-gray-200 rounded-lg shadow-sm"
+          >
+            <p className="text-gray-700 mb-2 text-sm">{note.text}</p>
+            <div className="flex justify-between items-center text-xs text-gray-500 border-t pt-2 mt-2">
+              <span>
+                By{" "}
+                <span className="font-medium text-gray-700">{note.author}</span>
+              </span>
+              <span>{note.timestamp}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// --- Contact Details Overview Tab Component (NEW/UPDATED) ---
+const ContactDetailsOverview = ({ contact }: { contact: Contact }) => (
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {/* Left Column: Profile Card & Quick Info */}
+    <div className="lg:col-span-1 space-y-6">
+      {/* Profile Card with Image and Main Info */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-center">
+        {/* Profile Image (ADDITION) */}
+        <div className="mx-auto w-24 h-24 mb-4">
+          <img
+            src={contact.avatar}
+            alt={contact.name}
+            className="w-full h-full rounded-full object-cover ring-4 ring-blue-500 ring-offset-2"
+          />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900">{contact.name}</h2>
+        <p className="text-blue-600 font-medium mb-1">{contact.role}</p>
+        <p className="text-gray-500 text-sm">{contact.company}</p>
+        <p
+          className={`text-xs mt-2 ${
+            contact.status.includes("Online now")
+              ? "text-green-500"
+              : "text-gray-500"
+          }`}
+        >
+          {contact.status}
+        </p>
+
+        {/* Tags */}
+        <div className="flex flex-wrap justify-center gap-2 mt-4">
+          {contact.tags.map((tag) => (
+            <span
+              key={tag}
+              className={`text-xs font-medium px-3 py-1 rounded-full ${getTagColor(
+                tag
+              )}`}
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Contact Information Section (UPDATED FOR CLARITY) */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+          <Briefcase size={20} className="mr-2 text-blue-600" />
+          Contact Information
+        </h3>
+        <div className="space-y-3 text-sm text-gray-700">
+          <div className="flex items-center">
+            <Mail size={16} className="mr-3 text-gray-400" />
+            <span className="font-medium">Email:</span>
+            <span className="ml-2 truncate">{contact.contactInfo.email}</span>
+          </div>
+          <div className="flex items-center">
+            <Phone size={16} className="mr-3 text-gray-400" />
+            <span className="font-medium">Phone:</span>
+            <span className="ml-2">{contact.contactInfo.phone}</span>
+          </div>
+          <div className="flex items-center">
+            <Briefcase size={16} className="mr-3 text-gray-400" />
+            <span className="font-medium">Company:</span>
+            <span className="ml-2 truncate">{contact.contactInfo.company}</span>
+          </div>
+          <div className="flex items-center">
+            <Clock size={16} className="mr-3 text-gray-400" />
+            <span className="font-medium">Created:</span>
+            <span className="ml-2">{contact.created}</span>
+          </div>
+          <div className="flex items-center">
+            <Clock size={16} className="mr-3 text-gray-400" />
+            <span className="font-medium">Last Updated:</span>
+            <span className="ml-2">{contact.lastUpdated}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Right Column: Short Note & Recent Activity */}
+    <div className="lg:col-span-2 space-y-6">
+      {/* Short Note/Description */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+          <FileText size={20} className="mr-2 text-blue-600" />
+          Short Description
+        </h3>
+        <p className="text-gray-600">
+          {contact.notes || "No short description available."}
+        </p>
+      </div>
+
+      {/* Recent Activity Timeline (Limit to 3 for overview) */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <ActivityTimeline activities={contact.activities} limit={3} />
+      </div>
+    </div>
+  </div>
+);
+
+// --- getTagColor Function (Moved out of component for reusability) ---
+const getTagColor = (tag: string) => {
+  switch (tag) {
+    case "Team":
+      return "bg-blue-100 text-blue-800";
+    case "Partner":
+      return "bg-purple-100 text-purple-800";
+    case "Lead":
+      return "bg-red-100 text-red-800";
+    case "Vendor":
+      return "bg-green-100 text-green-800";
+    case "Client":
+      return "bg-yellow-100 text-yellow-800";
+    case "Personal":
+      return "bg-gray-100 text-gray-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+// --- Main ContactsPage Component (UPDATED with new rendering logic) ---
 const ContactsPage = () => {
-  const [selectedContact, setSelectedContact] = useState(null);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [activeTab, setActiveTab] = useState("overview"); // overview, activity, notes
-  const [dropdownOpenId, setDropdownOpenId] = useState(null); // For individual card dropdowns
+  const [dropdownOpenId, setDropdownOpenId] = useState<number | null>(null); // For individual card dropdowns
   const [headerDropdownOpen, setHeaderDropdownOpen] = useState(false); // For details view header dropdown
 
-  const dropdownRef = useRef(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setDropdownOpenId(null);
         setHeaderDropdownOpen(false);
       }
@@ -372,53 +702,48 @@ const ContactsPage = () => {
   };
 
   // Action handlers (placeholders)
-  const handleEditContact = (contactId) => {
+  const handleEditContact = (contactId: number) => {
     console.log("Edit contact:", contactId);
     setDropdownOpenId(null);
     setHeaderDropdownOpen(false);
     // You might want to navigate to an edit form or open a modal
   };
 
-  const handleDeleteContact = (contactId) => {
+  const handleDeleteContact = (contactId: number) => {
     console.log("Delete contact:", contactId);
     setDropdownOpenId(null);
     setHeaderDropdownOpen(false);
     // Implement delete logic, e.g., filter from allContacts
   };
 
-  const handleAddFavorite = (contactId) => {
+  const handleAddFavorite = (contactId: number) => {
     console.log("Add to favorites:", contactId);
     setDropdownOpenId(null);
     setHeaderDropdownOpen(false);
     // Implement favorite toggle logic
   };
 
-  const handleSendMessage = (contactId) => {
+  const handleSendMessage = (contactId: number) => {
     console.log("Send message to:", contactId);
     // Navigate to message interface
   };
 
-  const handleViewDetails = (contact) => {
+  const handleViewDetails = (contact: Contact) => {
     setSelectedContact(contact);
     setDropdownOpenId(null); // Close card dropdown
   };
 
-  const getTagColor = (tag) => {
-    switch (tag) {
-      case "Team":
-        return "bg-blue-100 text-blue-800";
-      case "Partner":
-        return "bg-purple-100 text-purple-800";
-      case "Lead":
-        return "bg-red-100 text-red-800";
-      case "Vendor":
-        return "bg-green-100 text-green-800";
-      case "Client":
-        return "bg-yellow-100 text-yellow-800";
-      case "Personal":
-        return "bg-gray-100 text-gray-800";
+  // RENDER CONTENT BASED ON ACTIVE TAB
+  const renderDetailsContent = (contact: Contact) => {
+    switch (activeTab) {
+      case "overview":
+        return <ContactDetailsOverview contact={contact} />;
+      case "activity":
+        return <ActivityTimeline activities={contact.activities} />;
+      case "notes":
+        return <DetailedNotes detailedNotes={contact.detailedNotes} />;
       default:
-        return "bg-gray-100 text-gray-800";
+        return <ContactDetailsOverview contact={contact} />;
     }
   };
 
@@ -465,7 +790,7 @@ const ContactsPage = () => {
       </AnimatePresence>
 
       <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-        {/* Contact List Grid */}
+        {/* Contact List Grid (KEPT AS IS) */}
         <AnimatePresence mode="wait">
           {!selectedContact && (
             <motion.div
@@ -592,7 +917,7 @@ const ContactsPage = () => {
           )}
         </AnimatePresence>
 
-        {/* Contact Details View */}
+        {/* Contact Details View (UPDATED) */}
         <AnimatePresence mode="wait">
           {selectedContact && (
             <motion.div
@@ -601,7 +926,7 @@ const ContactsPage = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: "100%" }}
               transition={{ duration: 0.3 }}
-              className="bg-white rounded-xl shadow-md border border-gray-200 p-6 lg:col-span-2 absolute inset-0 md:relative md:col-span-3 lg:col-span-2" // Adjust col-span for responsive layout
+              className="bg-white rounded-xl shadow-md border border-gray-200 p-6 absolute inset-0 md:relative md:col-span-3 lg:col-span-2 overflow-y-auto" // Added overflow-y-auto
             >
               {/* Details Header */}
               <div className="flex items-center justify-between pb-6 border-b border-gray-200 mb-6">
@@ -625,7 +950,10 @@ const ContactsPage = () => {
                     className="flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
                   >
                     <Star size={16} />
-                    <span>Add to Favorites</span>
+                    <span>
+                      {selectedContact.isFavorite ? "Remove from" : "Add to"}{" "}
+                      Favorites
+                    </span>
                   </button>
                   <button
                     onClick={() => handleSendMessage(selectedContact.id)}
@@ -649,7 +977,6 @@ const ContactsPage = () => {
                           exit={{ opacity: 0, y: -10 }}
                           className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200"
                         >
-                          {/* These actions are duplicated from main buttons for consistency if user expects dropdown */}
                           <button
                             onClick={() =>
                               handleEditContact(selectedContact.id)
@@ -664,7 +991,10 @@ const ContactsPage = () => {
                             }
                             className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           >
-                            <Star size={16} className="mr-2" /> Add to
+                            <Star size={16} className="mr-2" />{" "}
+                            {selectedContact.isFavorite
+                              ? "Remove from"
+                              : "Add to"}
                             Favourites
                           </button>
                           <button
@@ -682,353 +1012,45 @@ const ContactsPage = () => {
                 </div>
               </div>
 
-              {/* Contact Details Overview */}
-              <div className="flex items-center space-x-4 mb-8">
-                <img
-                  src={selectedContact.avatar}
-                  alt={selectedContact.name}
-                  className="w-16 h-16 rounded-full object-cover ring-2 ring-blue-500 ring-offset-2"
-                />
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {selectedContact.name}
-                  </h2>
-                  <p className="text-gray-600">
-                    {selectedContact.role} at {selectedContact.company}
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {selectedContact.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${getTagColor(
-                          tag
-                        )}`}
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Tabs */}
-              <div className="border-b border-gray-200 mb-6">
-                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+              {/* Details Navigation Tabs (NEW) */}
+              <div className="mb-6 border-b border-gray-200">
+                <nav className="flex space-x-6" aria-label="Tabs">
                   <button
                     onClick={() => setActiveTab("overview")}
-                    className={`
-                      whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm
-                      ${
-                        activeTab === "overview"
-                          ? "border-blue-600 text-blue-600"
-                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }
-                    `}
+                    className={`py-2 px-1 text-sm font-medium transition-colors ${
+                      activeTab === "overview"
+                        ? "border-b-2 border-blue-600 text-blue-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
                   >
                     Overview
                   </button>
                   <button
                     onClick={() => setActiveTab("activity")}
-                    className={`
-                      whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm
-                      ${
-                        activeTab === "activity"
-                          ? "border-blue-600 text-blue-600"
-                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }
-                    `}
+                    className={`py-2 px-1 text-sm font-medium transition-colors ${
+                      activeTab === "activity"
+                        ? "border-b-2 border-blue-600 text-blue-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
                   >
                     Activity
                   </button>
                   <button
                     onClick={() => setActiveTab("notes")}
-                    className={`
-                      whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm
-                      ${
-                        activeTab === "notes"
-                          ? "border-blue-600 text-blue-600"
-                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }
-                    `}
+                    className={`py-2 px-1 text-sm font-medium transition-colors ${
+                      activeTab === "notes"
+                        ? "border-b-2 border-blue-600 text-blue-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
                   >
                     Notes
                   </button>
                 </nav>
               </div>
 
-              {/* Tab Content */}
-              <div className="min-h-[400px]">
-                {activeTab === "overview" && (
-                  <motion.div
-                    key="overview-tab"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.2 }}
-                    className="space-y-8"
-                  >
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                        Contact Information
-                      </h3>
-                      <p className="text-sm text-gray-500 mb-4">
-                        Basic information about the contact
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700">
-                        <div>
-                          <p className="font-medium text-gray-800">Email</p>
-                          <p className="text-blue-600 hover:underline cursor-pointer">
-                            {selectedContact.contactInfo.email}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-800">Company</p>
-                          <p>{selectedContact.contactInfo.company}</p>
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-800">Phone</p>
-                          <p className="text-blue-600 hover:underline cursor-pointer">
-                            {selectedContact.contactInfo.phone}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-800">Position</p>
-                          <p>{selectedContact.contactInfo.position}</p>
-                        </div>
-                      </div>
-                      <div className="mt-4">
-                        <p className="font-medium text-gray-800">Tags</p>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {selectedContact.contactInfo.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className={`text-xs font-medium px-2 py-0.5 rounded-full ${getTagColor(
-                                tag
-                              )}`}
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="mt-4">
-                        <p className="font-medium text-gray-800">Notes</p>
-                        <p className="text-gray-700 mt-1">
-                          {selectedContact.notes}
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 text-sm text-gray-700">
-                        <div>
-                          <p className="font-medium text-gray-800">Created</p>
-                          <p>{selectedContact.created}</p>
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-800">
-                            Last Updated
-                          </p>
-                          <p>{selectedContact.lastUpdated}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Recent Activity in Overview */}
-                    {selectedContact.activities &&
-                      selectedContact.activities.length > 0 && (
-                        <div>
-                          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                            Recent Activity
-                          </h3>
-                          <p className="text-sm text-gray-500 mb-4">
-                            Latest interactions with this contact
-                          </p>
-                          <div className="space-y-4">
-                            {selectedContact.activities.slice(0, 3).map(
-                              (
-                                activity // Show top 3 activities
-                              ) => (
-                                <div
-                                  key={activity.id}
-                                  className="flex items-start space-x-3"
-                                >
-                                  <div
-                                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${activity.iconColor.replace(
-                                      "text-",
-                                      "bg-"
-                                    )} bg-opacity-20`}
-                                  >
-                                    <activity.icon
-                                      size={16}
-                                      className={activity.iconColor}
-                                    />
-                                  </div>
-                                  <div className="flex-1">
-                                    <p className="text-sm font-medium text-gray-800">
-                                      {activity.description}
-                                    </p>
-                                    <div className="flex items-center text-xs text-gray-500 mt-1">
-                                      {activity.user && (
-                                        <>
-                                          <img
-                                            src={activity.avatar}
-                                            alt={activity.user}
-                                            className="w-4 h-4 rounded-full mr-1"
-                                          />
-                                          <span>{activity.user}</span>
-                                          <span className="mx-1">·</span>
-                                        </>
-                                      )}
-                                      <span>{activity.date}</span>
-                                      {activity.time && (
-                                        <span className="ml-1">
-                                          {activity.time}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              )
-                            )}
-                          </div>
-                          {selectedContact.activities.length > 3 && (
-                            <button
-                              onClick={() => setActiveTab("activity")}
-                              className="mt-4 text-blue-600 text-sm font-medium hover:underline"
-                            >
-                              Load More
-                            </button>
-                          )}
-                        </div>
-                      )}
-                  </motion.div>
-                )}
-
-                {activeTab === "activity" && (
-                  <motion.div
-                    key="activity-tab"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.2 }}
-                    className="space-y-6"
-                  >
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      Activity Timeline
-                    </h3>
-                    <p className="text-sm text-gray-500 mb-4">
-                      History of interactions with this contact
-                    </p>
-                    <div className="space-y-6">
-                      {selectedContact.activities.length > 0 ? (
-                        selectedContact.activities.map((activity) => (
-                          <div
-                            key={activity.id}
-                            className="flex items-start space-x-4"
-                          >
-                            <div
-                              className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${activity.iconColor.replace(
-                                "text-",
-                                "bg-"
-                              )} bg-opacity-20`}
-                            >
-                              <activity.icon
-                                size={20}
-                                className={activity.iconColor}
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <p className="font-medium text-gray-800">
-                                {activity.type}
-                              </p>
-                              <p className="text-gray-700 mt-1">
-                                {activity.description}
-                              </p>
-                              {activity.duration && (
-                                <p className="text-sm text-gray-500">
-                                  Duration: {activity.duration}
-                                </p>
-                              )}
-                              <div className="flex items-center text-xs text-gray-500 mt-2">
-                                {activity.user && (
-                                  <>
-                                    <img
-                                      src={activity.avatar}
-                                      alt={activity.user}
-                                      className="w-5 h-5 rounded-full mr-1"
-                                    />
-                                    <span>{activity.user}</span>
-                                    <span className="mx-1">·</span>
-                                  </>
-                                )}
-                                <span>{activity.date}</span>
-                                {activity.time && (
-                                  <span className="ml-1">{activity.time}</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-gray-500 text-center py-10">
-                          No activity recorded for this contact.
-                        </p>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-
-                {activeTab === "notes" && (
-                  <motion.div
-                    key="notes-tab"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.2 }}
-                    className="space-y-6"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="text-xl font-semibold text-gray-900">
-                          Notes
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                          Notes and comments about this contact
-                        </p>
-                      </div>
-                      <button className="flex items-center space-x-2 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-gray-800 transition-colors text-sm font-medium">
-                        <Plus size={16} />
-                        <span>Add Note</span>
-                      </button>
-                    </div>
-                    <div className="space-y-4">
-                      {selectedContact.detailedNotes &&
-                      selectedContact.detailedNotes.length > 0 ? (
-                        selectedContact.detailedNotes.map((note) => (
-                          <div
-                            key={note.id}
-                            className="bg-gray-50 rounded-lg p-4 border border-gray-200"
-                          >
-                            <p className="text-sm text-gray-800 leading-relaxed mb-2">
-                              {note.text}
-                            </p>
-                            <div className="flex items-center justify-between text-xs text-gray-500">
-                              <span>
-                                Added by{" "}
-                                <span className="font-medium">
-                                  {note.author}
-                                </span>
-                              </span>
-                              <span>{note.timestamp}</span>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-gray-500 text-center py-10">
-                          No notes available for this contact.
-                        </p>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
+              {/* Tab Content (UPDATED) */}
+              <div className="pt-2">
+                {renderDetailsContent(selectedContact)}
               </div>
             </motion.div>
           )}

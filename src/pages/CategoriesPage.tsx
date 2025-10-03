@@ -12,8 +12,14 @@ import {
   MoreHorizontal,
   BookOpen,
   X,
-  CheckCircle,
   AlertTriangle,
+  HardHat,
+  FlaskConical,
+  Globe,
+  Dna,
+  Cpu,
+  Calculator,
+  Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -28,6 +34,8 @@ type Category = {
   subjects: string[];
   status: "active" | "inactive";
   createdDate: string;
+  // React.ElementType is the correct type for a component (like a Lucide icon)
+  image: React.ElementType;
 };
 
 const initialCategories: Category[] = [
@@ -47,6 +55,7 @@ const initialCategories: Category[] = [
     ],
     status: "active",
     createdDate: "2024-01-10",
+    image: Calculator,
   },
   {
     id: 2,
@@ -64,6 +73,7 @@ const initialCategories: Category[] = [
     ],
     status: "active",
     createdDate: "2024-01-12",
+    image: Zap,
   },
   {
     id: 3,
@@ -81,6 +91,7 @@ const initialCategories: Category[] = [
     ],
     status: "active",
     createdDate: "2024-01-08",
+    image: Cpu,
   },
   {
     id: 4,
@@ -98,6 +109,7 @@ const initialCategories: Category[] = [
     ],
     status: "active",
     createdDate: "2024-01-15",
+    image: FlaskConical,
   },
   {
     id: 5,
@@ -114,6 +126,7 @@ const initialCategories: Category[] = [
     ],
     status: "inactive",
     createdDate: "2024-01-05",
+    image: Globe,
   },
   {
     id: 6,
@@ -126,6 +139,7 @@ const initialCategories: Category[] = [
     subjects: ["Molecular Biology", "Genetics", "Ecology", "Anatomy"],
     status: "active",
     createdDate: "2024-01-18",
+    image: Dna,
   },
 ];
 
@@ -153,16 +167,27 @@ const CategoriesPage: React.FC = () => {
   const handleCreateOrUpdate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const newCategory = {
+
+    // **FIX APPLIED HERE:** Ensure that all non-form fields (especially 'image')
+    // are correctly carried over or initialized to prevent 'undefined' in render.
+    const newCategory: Category = {
       id: editingCategory ? editingCategory.id : categories.length + 1,
       name: formData.get("name") as string,
       description: formData.get("description") as string,
-      color: "bg-blue-600", // Simplified for now, you would get this from a color picker
+
+      // Preserve existing data for fields not in the simple modal form
+      color: editingCategory ? editingCategory.color : "bg-blue-600",
       facultyCount: editingCategory ? editingCategory.facultyCount : 0,
       sessionCount: editingCategory ? editingCategory.sessionCount : 0,
-      subjects: [],
-      status: "active" as "active" | "inactive",
-      createdDate: new Date().toISOString().slice(0, 10),
+      subjects: editingCategory ? editingCategory.subjects : [],
+      status: editingCategory
+        ? editingCategory.status
+        : ("active" as "active" | "inactive"),
+      createdDate: editingCategory
+        ? editingCategory.createdDate
+        : new Date().toISOString().slice(0, 10),
+      // Crucial: Use the existing icon or the default FolderOpen icon
+      image: editingCategory ? editingCategory.image : FolderOpen,
     };
 
     if (editingCategory) {
@@ -245,7 +270,10 @@ const CategoriesPage: React.FC = () => {
           </p>
         </div>
         <motion.button
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setShowModal(true);
+            setEditingCategory(null); // Ensure no category is being edited when clicking Create
+          }}
           className="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center shadow-lg"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -277,7 +305,6 @@ const CategoriesPage: React.FC = () => {
           </div>
           <div className="absolute inset-0 bg-blue-50/50 -bottom-10 -right-10 rounded-full w-24 h-24 blur-2xl opacity-75" />
         </motion.div>
-        {/* ... (rest of the stats cards with similar enhancements) */}
         <motion.div
           className="bg-white rounded-xl shadow-md border border-gray-200 p-6 relative overflow-hidden"
           variants={cardVariants}
@@ -377,100 +404,104 @@ const CategoriesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Active Categories */}
+      {/* Active Categories - NEW STYLE */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">
           Active Categories ({activeCategories.length})
         </h2>
         {activeCategories.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-4">
             {activeCategories.map((category) => (
               <motion.div
                 key={category.id}
-                className="bg-white rounded-xl shadow-md border border-gray-200 p-6 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300"
-                initial="hidden"
-                animate="visible"
-                variants={cardVariants}
-                whileHover="hover"
+                className="bg-white rounded-xl shadow-md overflow-hidden relative group"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
+                {/* Colored Accent Stripe */}
+                <div
+                  className={`absolute left-0 top-0 bottom-0 w-2 ${category.color} transition-all duration-300 group-hover:w-3`}
+                ></div>
+
+                <div className="p-4 pl-6 flex justify-between items-center transition-all duration-300 group-hover:shadow-lg">
+                  <div className="flex items-center space-x-4 flex-1">
+                    {/* Category Icon/Image */}
                     <div
-                      className={`w-14 h-14 ${category.color} rounded-lg flex items-center justify-center`}
+                      className={`w-12 h-12 ${category.color} bg-opacity-10 rounded-lg flex items-center justify-center shrink-0`}
                     >
-                      <FolderOpen className="w-7 h-7 text-white" />
+                      {/* Using category.image is safe now as it's guaranteed to be a component */}
+                      <category.image
+                        className={`w-6 h-6 ${category.color.replace(
+                          "bg-",
+                          "text-"
+                        )}`}
+                      />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
+
+                    {/* Main Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-gray-900 truncate">
                         {category.name}
                       </h3>
-                      <span className="bg-green-100 text-green-800 px-2 py-0.5 text-xs font-medium rounded-full mt-1 inline-block">
-                        {category.status}
-                      </span>
+                      <p className="text-sm text-gray-500 truncate">
+                        {category.description}
+                      </p>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="hidden sm:flex space-x-6 text-center text-sm ml-4 shrink-0">
+                      <div className="flex flex-col items-center">
+                        <span className="font-semibold text-gray-900">
+                          {category.facultyCount}
+                        </span>
+                        <span className="text-xs text-gray-500">Faculty</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <span className="font-semibold text-gray-900">
+                          {category.sessionCount}
+                        </span>
+                        <span className="text-xs text-gray-500">Sessions</span>
+                      </div>
+                    </div>
+
+                    {/* Subjects - Visible on larger screens */}
+                    <div className="hidden lg:flex flex-wrap gap-2 ml-4 shrink-0 max-w-sm">
+                      {category.subjects.slice(0, 2).map((subject, index) => (
+                        <span
+                          key={index}
+                          className={`px-3 py-1 text-xs font-medium rounded-full ${getSubjectColor(
+                            index
+                          )}`}
+                        >
+                          {subject}
+                        </span>
+                      ))}
+                      {category.subjects.length > 2 && (
+                        <span className="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+                          +{category.subjects.length - 2}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                    <MoreHorizontal className="w-5 h-5" />
-                  </button>
-                </div>
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {category.description}
-                </p>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-gray-900">
-                      {category.facultyCount}
-                    </div>
-                    <div className="text-xs text-gray-500">Faculty</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-gray-900">
-                      {category.sessionCount}
-                    </div>
-                    <div className="text-xs text-gray-500">Sessions</div>
-                  </div>
-                </div>
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Subjects:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {category.subjects.slice(0, 3).map((subject, index) => (
-                      <span
-                        key={index}
-                        className={`px-3 py-1 text-xs font-medium rounded-full ${getSubjectColor(
-                          index
-                        )}`}
-                      >
-                        {subject}
-                      </span>
-                    ))}
-                    {category.subjects.length > 3 && (
-                      <span className="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
-                        +{category.subjects.length - 3} more
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200 mt-auto">
-                  <div className="text-xs text-gray-500">
-                    Created: {category.createdDate}
-                  </div>
-                  <div className="flex items-center space-x-2">
+
+                  {/* Actions */}
+                  <div className="flex items-center space-x-2 ml-4 shrink-0">
                     <button
                       onClick={() => handleEditClick(category)}
                       className="p-2 rounded-full text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                       title="Edit Category"
                     >
-                      <Edit className="w-4 h-4" />
+                      <Edit className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => setCategoryToDelete(category)}
                       className="p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                       title="Delete Category"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-5 h-5" />
                     </button>
+                    <MoreHorizontal className="w-5 h-5 text-gray-400 ml-2" />
                   </div>
                 </div>
               </motion.div>
@@ -478,12 +509,12 @@ const CategoriesPage: React.FC = () => {
           </div>
         ) : (
           <p className="text-center text-gray-500 py-10">
-            No active categories found.
+            No active categories found matching the filters.
           </p>
         )}
       </div>
 
-      {/* Inactive Categories */}
+      {/* Inactive Categories - Original Card Style Maintained with Opacity */}
       {inactiveCategories.length > 0 && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
@@ -504,7 +535,8 @@ const CategoriesPage: React.FC = () => {
                     <div
                       className={`w-14 h-14 ${category.color} rounded-lg flex items-center justify-center`}
                     >
-                      <FolderOpen className="w-7 h-7 text-white" />
+                      <category.image className="w-7 h-7 text-white" />{" "}
+                      {/* Use specific icon */}
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">
@@ -588,10 +620,9 @@ const CategoriesPage: React.FC = () => {
         {(showModal || editingCategory) && (
           <motion.div
             className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4"
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            variants={modalVariants}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             onClick={() => {
               setShowModal(false);
               setEditingCategory(null);
@@ -600,6 +631,10 @@ const CategoriesPage: React.FC = () => {
             <motion.div
               className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 relative"
               onClick={(e) => e.stopPropagation()}
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
             >
               <button
                 onClick={() => {
@@ -677,15 +712,18 @@ const CategoriesPage: React.FC = () => {
         {categoryToDelete && (
           <motion.div
             className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4"
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            variants={modalVariants}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             onClick={() => setCategoryToDelete(null)}
           >
             <motion.div
               className="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 relative text-center"
               onClick={(e) => e.stopPropagation()}
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
             >
               <div className="flex justify-center mb-4">
                 <AlertTriangle className="w-12 h-12 text-red-500" />

@@ -1,5 +1,5 @@
-// src/pages/HomePage.tsx
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import {
   CheckCircle,
   Play,
@@ -12,51 +12,61 @@ import {
   Bell,
   Activity,
   Zap,
+  ChevronDown,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
-// Placeholder for your navigation logic
-// If you are using a router like React Router DOM, you would use a hook here:
-// import { useNavigate } from 'react-router-dom';
-// const navigate = useNavigate();
-// const handleNavigateTo = (path) => navigate(path);
-const handleNavigateTo = (path) => {
-  console.log(`Navigating to ${path}...`);
-  // Add your actual routing logic here
-  // e.g., window.location.href = path;
+// --- Mock Data for Dynamic Live Session Feature ---
+const MOCK_LIVE_SESSION_DATA = {
+  isLive: true,
+  sessionTitle: "AI Fundamentals: Neural Networks",
+  faculty: "Dr. Anya Sharma",
+  duration: "2:34:12",
 };
 
+// --- HomePage Component ---
 const HomePage = () => {
+  const navigate = useNavigate(); // Initialize useNavigate hook
+
+  // Custom handler for internal navigation
+  const handleNavigateTo = (path: string) => {
+    navigate(path);
+  };
+
+  // State for the Live Session status (will come from an API in a real app)
+  const [liveSession] = useState(MOCK_LIVE_SESSION_DATA);
+
+  // --- Data Definitions ---
   const steps = [
     {
       title: "Setup Your Account",
       description: "Create your profile and configure basic settings",
       completed: true,
-      action: () => handleNavigateTo("/settings"),
+      action: () => handleNavigateTo("/dashboard/settings"),
     },
     {
       title: "Add Faculty Members",
       description: "Import or manually add your teaching staff",
       completed: true,
-      action: () => handleNavigateTo("/faculty"),
+      action: () => handleNavigateTo("/dashboard/faculty"),
     },
     {
       title: "Create Categories",
       description: "Organize sessions by subject or department",
       completed: true,
-      action: () => handleNavigateTo("/categories"),
+      action: () => handleNavigateTo("/dashboard/categories"),
     },
     {
       title: "Schedule Sessions",
       description: "Start creating and managing faculty sessions",
       completed: false,
-      action: () => handleNavigateTo("/schedule"),
+      action: () => handleNavigateTo("/dashboard/calender"),
     },
     {
       title: "Generate Reports",
       description: "Track performance and analytics",
       completed: false,
-      action: () => handleNavigateTo("/reports"),
+      action: () => handleNavigateTo("/dashboard/reports"),
     },
   ];
 
@@ -67,7 +77,7 @@ const HomePage = () => {
       icon: Users,
       iconBg: "bg-purple-100",
       iconColor: "text-purple-600",
-      path: "/faculty",
+      path: "/dashboard/faculty",
     },
     {
       title: "Session Scheduling",
@@ -75,7 +85,7 @@ const HomePage = () => {
       icon: Calendar,
       iconBg: "bg-blue-100",
       iconColor: "text-blue-600",
-      path: "/schedule",
+      path: "/dashboard/calender",
     },
     {
       title: "Analytics & Reports",
@@ -83,7 +93,7 @@ const HomePage = () => {
       icon: BarChart3,
       iconBg: "bg-green-100",
       iconColor: "text-green-600",
-      path: "/reports",
+      path: "/dashboard/reports",
     },
     {
       title: "Documentation",
@@ -91,7 +101,7 @@ const HomePage = () => {
       icon: FileText,
       iconBg: "bg-yellow-100",
       iconColor: "text-yellow-600",
-      path: "/documentation",
+      path: "/dashboard/reports", // Changed path to match report-like pages
     },
   ];
 
@@ -150,22 +160,33 @@ const HomePage = () => {
           <div className="absolute bottom-0 right-0 w-48 h-48 bg-white rounded-full blur-3xl transform translate-x-1/2 translate-y-1/2"></div>
         </div>
 
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between">
-          <div className="flex-1">
-            <div className="flex items-center text-sm mb-4 bg-white/20 px-3 py-1 rounded-full w-fit">
-              <span className="relative flex h-2 w-2 mr-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-              </span>
-              <span>Live Faculty Session</span>
-              <span className="ml-2 flex items-center">
-                <Clock className="w-3 h-3 mr-1 opacity-75" />
-                2:34:12
-              </span>
-            </div>
+        <div className="relative z-10 flex flex-col-reverse md:flex-row items-center justify-between">
+          <div className="flex-1 mt-6 md:mt-0">
+            {/* Live Session Indicator - DYNAMICALLY RENDERED */}
+            {liveSession.isLive && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center text-sm mb-4 bg-red-600 px-3 py-1 rounded-full w-fit font-semibold"
+              >
+                <span className="relative flex h-2 w-2 mr-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                </span>
+                <span>LIVE Session: {liveSession.sessionTitle}</span>
+                <span className="ml-3 flex items-center bg-white/20 px-2 py-0.5 rounded-full">
+                  <Clock className="w-3 h-3 mr-1" />
+                  {liveSession.duration}
+                </span>
+              </motion.div>
+            )}
+
             <h1 className="text-3xl lg:text-5xl font-extrabold mb-4 leading-tight">
-              Streamline Your <br className="hidden md:inline" />
-              <span className="text-blue-200">Faculty Management</span>
+              Welcome Back, Admin!
+              <br className="hidden md:inline" />
+              <span className="text-blue-200">
+                Streamline Your Faculty Management
+              </span>
             </h1>
             <p className="text-lg opacity-90 mb-6 max-w-xl">
               Create, manage, and track faculty sessions with powerful
@@ -174,7 +195,7 @@ const HomePage = () => {
             </p>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
               <motion.button
-                onClick={() => handleNavigateTo("/schedule")} // Corrected
+                onClick={() => handleNavigateTo("/dashboard/calender")} // 🎯 Navigates to Session Scheduling/Calendar
                 className="bg-white text-purple-600 px-8 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-colors flex items-center shadow-lg"
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95, y: 0 }}
@@ -183,21 +204,22 @@ const HomePage = () => {
                 Create Session
               </motion.button>
               <motion.button
-                onClick={() => handleNavigateTo("/dashboard")} // Corrected
+                onClick={() => handleNavigateTo("/dashboard/reports")} // 🎯 Navigates to Reports
                 className="border border-white border-opacity-30 text-white px-8 py-3 rounded-xl font-semibold hover:bg-white hover:bg-opacity-10 transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Play className="w-4 h-4 mr-2" />
-                View Dashboard
+                <BarChart3 className="w-4 h-4 mr-2" />
+                View Reports
               </motion.button>
             </div>
           </div>
-          <div className="flex-shrink-0 w-full max-w-sm lg:w-1/2">
+          {/* IMAGE FIX: Changed to a fixed size/container to prevent overlap */}
+          <div className="flex-shrink-0 w-full max-w-xs md:max-w-sm ml-0 md:ml-6 mt-4 md:mt-0">
             <img
               src="https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
               alt="An illustration of a team collaborating on a dashboard"
-              className="rounded-xl shadow-lg w-full"
+              className="rounded-xl shadow-2xl w-full h-auto object-cover"
             />
           </div>
         </div>
@@ -230,7 +252,7 @@ const HomePage = () => {
                   className={`flex items-start space-x-4 p-4 rounded-lg transition-colors cursor-pointer ${
                     step.completed ? "bg-gray-50" : "hover:bg-gray-100"
                   }`}
-                  onClick={step.action}
+                  onClick={step.action} // 🎯 Uses action to navigate
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -283,7 +305,7 @@ const HomePage = () => {
                 <motion.div
                   key={index}
                   className="bg-white rounded-xl shadow-md border border-gray-200 p-6 flex flex-col items-start hover:shadow-lg transition-shadow duration-300 cursor-pointer"
-                  onClick={() => handleNavigateTo(feature.path)}
+                  onClick={() => handleNavigateTo(feature.path)} // 🎯 Uses feature.path to navigate
                   whileHover={{
                     y: -5,
                     boxShadow: "0 10px 20px rgba(0,0,0,0.05)",

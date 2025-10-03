@@ -8,8 +8,11 @@ import {
   Trash2,
   VolumeX,
   Reply,
-  MessageSquare,
   Dot,
+  Calendar, // New Icon for Meetings/Classes
+  FileText, // New Icon for Submissions
+  Clock, // New Icon for Time
+  Users, // New Icon for class enrollment
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -22,124 +25,97 @@ interface User {
 
 interface Notification {
   id: string;
-  category: "All" | "Tasks" | "Mentions" | "Projects" | "System";
+  // Updated Categories
+  category: "All" | "Classes" | "Meetings" | "Submissions" | "Admin";
+  // Updated Types
   type:
-    | "task_assigned"
-    | "mentioned"
-    | "project_status"
-    | "task_completed"
-    | "system_maintenance"
-    | "project_created"
-    | "account_security";
+    | "meeting_invite" // e.g., Department Meeting
+    | "class_update" // e.g., class cancelled
+    | "new_submission" // e.g., assignment submitted
+    | "class_enrollment" // e.g., new student added to a class
+    | "admin_announcement"; // e.g., HR policy change
   message: string;
-  user?: User; // User related to the notification event
-  project?: string; // Project name if applicable
+  user?: User; // User related to the notification event (e.g., student, colleague)
+  context?: string; // e.g., Class Name, Meeting Topic
   timestamp: string; // e.g., "2 hours ago", "Yesterday"
   read: boolean;
   muted: boolean;
-  commentContext?: string; // For mention notifications
-  relatedDetails?: string; // For project/task details
-  detailSender?: User; // For the "Sent by" in details
+  // Specific details for the new types
+  dateTime?: string; // For meeting invites or class times
+  fileName?: string; // For submissions
+  senderRole?: string; // Role of the sender, if applicable
 }
 
 // --- Dummy Data ---
 const users: { [key: string]: User } = {
-  alex: { id: "alex", name: "Alex Morgan", avatar: "AM" },
-  jessica: { id: "jessica", name: "Jessica Chen", avatar: "JC" },
-  david: { id: "david", name: "David Kim", avatar: "DK" },
-  sarah: { id: "sarah", name: "Sarah Johnson", avatar: "SJ" },
-  william: { id: "william", name: "William Jack", avatar: "WJ" },
-  system: { id: "system", name: "System", avatar: "SY" }, // Placeholder for system events
+  alex: { id: "alex", name: "Alex Morgan (Student)", avatar: "AM" },
+  jessica: { id: "jessica", name: "Jessica Chen (Faculty)", avatar: "JC" },
+  david: { id: "david", name: "David Kim (Admin)", avatar: "DK" },
+  sarah: { id: "sarah", name: "Sarah Johnson (Student)", avatar: "SJ" },
+  william: { id: "william", name: "Dr. Jack (Dept. Head)", avatar: "WJ" },
+  system: { id: "system", name: "System", avatar: "SY" },
 };
 
 const initialNotifications: Notification[] = [
   // TODAY
   {
     id: "notif-1",
-    category: "Tasks",
-    type: "task_assigned",
-    message: `<span class="font-semibold">${users.alex.name}</span> assigned you the task <span class="font-semibold">"Update design system"</span>`,
-    user: users.alex,
-    timestamp: "about 1 hour ago",
+    category: "Meetings",
+    type: "meeting_invite",
+    message: `<span class="font-semibold">${users.william.name}</span> invited you to the <span class="font-semibold">"Department Strategy Review"</span> meeting.`,
+    user: users.william,
+    context: "Department Strategy Review",
+    timestamp: "about 30 minutes ago",
     read: false,
     muted: false,
+    dateTime: "Today, 3:00 PM - Room 301",
+    senderRole: "Department Head",
   },
   {
     id: "notif-2",
-    category: "Mentions",
-    type: "mentioned",
-    message: `<span class="font-semibold">${users.jessica.name}</span> mentioned you in a comment: "Can @you review this by tomorrow?"`,
-    user: users.jessica,
-    timestamp: "about 2 hours ago",
+    category: "Submissions",
+    type: "new_submission",
+    message: `<span class="font-semibold">${users.alex.name}</span> submitted a new file: <span class="font-semibold">"Final_Project_Report.pdf"</span> for CS 401.`,
+    user: users.alex,
+    context: "CS 401: Advanced Algorithms",
+    timestamp: "about 1 hour ago",
     read: false,
     muted: false,
-    commentContext: `"Can @you review this by tomorrow?"`,
-    relatedDetails: "View details of Task 'Figma Design System'",
-    detailSender: users.jessica,
+    fileName: "Final_Project_Report.pdf",
   },
-  {
-    id: "notif-3",
-    category: "Projects",
-    type: "project_status",
-    message: `The project <span class="font-semibold">'Figma Design System'</span> status changed to <span class="font-medium text-blue-600">"In Progress"</span>`,
-    user: users.system, // Conceptual system user for project updates
-    project: "Figma Design System",
-    timestamp: "about 6 hours ago",
-    read: true,
-    muted: false,
-  },
-
   // YESTERDAY
   {
+    id: "notif-3",
+    category: "Classes",
+    type: "class_update",
+    message: `Your class <span class="font-semibold">"ENG 101: Intro to Lit"</span> on Tuesday has been <span class="font-medium text-red-600">cancelled</span>.`,
+    user: users.system,
+    context: "ENG 101: Intro to Lit",
+    timestamp: "1 day ago",
+    read: true,
+    muted: false,
+    dateTime: "Tuesday, October 7th, 10:00 AM",
+  },
+  {
     id: "notif-4",
-    category: "Tasks",
-    type: "task_completed",
-    message: `<span class="font-semibold">${users.david.name}</span> completed the task <span class="font-semibold">"Create wireframes for homepage"</span>`,
+    category: "Admin",
+    type: "admin_announcement",
+    message: `<span class="font-semibold">${users.david.name}</span> posted a new announcement: <span class="font-semibold">"Mandatory Safety Training Schedule"</span>.`,
     user: users.david,
+    context: "Mandatory Safety Training Schedule",
     timestamp: "1 day ago",
     read: true,
     muted: false,
   },
-
   // OLDER
   {
     id: "notif-5",
-    category: "System",
-    type: "system_maintenance",
-    message: `Scheduled maintenance will occur on <span class="font-semibold">Sunday at 2:00 AM UTC</span>`,
+    category: "Classes",
+    type: "class_enrollment",
+    message: `A new student was <span class="font-semibold">enrolled</span> in your course <span class="font-semibold">"BIO 205: Cell Biology"</span>.`,
     user: users.system,
+    context: "BIO 205: Cell Biology",
     timestamp: "3 days ago",
-    read: true,
-    muted: false,
-  },
-  {
-    id: "notif-6",
-    category: "Mentions",
-    type: "mentioned",
-    message: `<span class="font-semibold">${users.sarah.name}</span> mentioned you in the task <span class="font-semibold">"Prepare Q3 report"</span>: "@you can help with the financial section?"`,
-    user: users.sarah,
-    timestamp: "3 days ago",
-    read: true,
-    muted: false,
-  },
-  {
-    id: "notif-7",
-    category: "Projects",
-    type: "project_created",
-    message: `<span class="font-semibold">${users.william.name}</span> created a new project <span class="font-semibold">"Mobile App Redesign"</span> and added you as a member`,
-    user: users.william,
-    project: "Mobile App Redesign",
-    timestamp: "4 days ago",
-    read: true,
-    muted: false,
-  },
-  {
-    id: "notif-8",
-    category: "System",
-    type: "account_security",
-    message: `Your account password was changed successfully`,
-    user: users.system,
-    timestamp: "5 days ago",
     read: true,
     muted: false,
   },
@@ -152,7 +128,13 @@ const UserAvatar: React.FC<{ user: User | undefined; size?: "sm" | "md" }> = ({
   size = "md",
 }) => {
   const avatarSize = size === "sm" ? "h-6 w-6 text-xs" : "h-8 w-8 text-sm";
-  const bgColor = user?.id === "system" ? "bg-gray-400" : "bg-blue-600";
+  // Updated colors for context
+  const bgColor =
+    user?.id === "system"
+      ? "bg-gray-400"
+      : user?.name.includes("Student")
+      ? "bg-teal-600"
+      : "bg-blue-600";
   return (
     <div
       className={`flex-shrink-0 rounded-full flex items-center justify-center font-semibold text-white ${avatarSize} ${bgColor}`}
@@ -287,12 +269,7 @@ const NotificationPage: React.FC = () => {
   };
 
   const groupNotificationsByTime = (notifs: Notification[]) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set to start of today
-
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1); // Set to start of yesterday
-
+    // Reusing the simple time grouping based on dummy data timestamp strings
     const groups: { [key: string]: Notification[] } = {
       TODAY: [],
       YESTERDAY: [],
@@ -300,8 +277,10 @@ const NotificationPage: React.FC = () => {
     };
 
     notifs.forEach((notif) => {
-      // Dummy timestamp logic for mock data
-      if (notif.timestamp.includes("hour")) {
+      if (
+        notif.timestamp.includes("hour") ||
+        notif.timestamp.includes("minutes")
+      ) {
         groups["TODAY"].push(notif);
       } else if (notif.timestamp.includes("1 day ago")) {
         groups["YESTERDAY"].push(notif);
@@ -315,40 +294,145 @@ const NotificationPage: React.FC = () => {
 
   const grouped = groupNotificationsByTime(filteredNotifications);
 
+  // --- New Helper Component for Notification Details based on Type ---
+  const FacultyNotificationDetails: React.FC<{ notif: Notification }> = ({
+    notif,
+  }) => {
+    return (
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="bg-white rounded-lg shadow-sm p-5 border border-gray-200">
+          <h4 className="text-xl font-bold text-gray-900 mb-3">
+            {notif.context || "General Notification"}
+          </h4>
+
+          {/* Core Message */}
+          <p
+            className="text-gray-800 text-base mb-4"
+            dangerouslySetInnerHTML={{ __html: notif.message }}
+          />
+
+          {/* Contextual Details */}
+          {notif.type === "meeting_invite" && (
+            <div className="space-y-2 text-sm text-gray-700 pt-3 border-t border-gray-100">
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-2 text-blue-500" />
+                <span className="font-semibold">Time & Location:</span>{" "}
+                {notif.dateTime}
+              </div>
+              {notif.user && (
+                <div className="flex items-center">
+                  <Users className="h-4 w-4 mr-2 text-blue-500" />
+                  <span className="font-semibold">Organizer:</span>{" "}
+                  {notif.user.name} ({notif.senderRole})
+                </div>
+              )}
+            </div>
+          )}
+
+          {notif.type === "new_submission" && (
+            <div className="space-y-2 text-sm text-gray-700 pt-3 border-t border-gray-100">
+              <div className="flex items-center">
+                <FileText className="h-4 w-4 mr-2 text-teal-500" />
+                <span className="font-semibold">File Submitted:</span>{" "}
+                {notif.fileName}
+              </div>
+              <div className="flex items-center">
+                <Users className="h-4 w-4 mr-2 text-teal-500" />
+                <span className="font-semibold">Student:</span>{" "}
+                {notif.user?.name}
+              </div>
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 mr-2 text-teal-500" />
+                <span className="font-semibold">Received:</span>{" "}
+                {notif.timestamp}
+              </div>
+            </div>
+          )}
+
+          {notif.type === "class_update" && (
+            <div className="space-y-2 text-sm text-gray-700 pt-3 border-t border-gray-100">
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 mr-2 text-red-500" />
+                <span className="font-semibold">Scheduled Time:</span>{" "}
+                {notif.dateTime}
+              </div>
+              <p className="text-red-600 font-semibold mt-2">
+                Action Required: Please notify your students of the
+                cancellation.
+              </p>
+            </div>
+          )}
+
+          {notif.type === "class_enrollment" && (
+            <div className="space-y-2 text-sm text-gray-700 pt-3 border-t border-gray-100">
+              <p className="font-medium">
+                You may need to update your student roster and learning
+                management system access.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 mt-auto">
+          {notif.type === "meeting_invite" && (
+            <button className="flex items-center px-4 py-2 border border-green-300 rounded-md text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100">
+              <Calendar className="h-4 w-4 mr-2" />
+              Accept Invite
+            </button>
+          )}
+          {notif.type === "new_submission" && (
+            <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">
+              <FileText className="h-4 w-4 mr-2" />
+              View Submission
+            </button>
+          )}
+          <button className="flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+            <Reply className="h-4 w-4 mr-2" />
+            Archive
+          </button>
+        </div>
+      </div>
+    );
+  };
+  // --- End of New Helper Component ---
+
   return (
     <div className="flex flex-col lg:flex-row h-full overflow-hidden bg-white">
       {/* Left Panel: Notification List */}
       <div className="flex flex-col w-full lg:w-2/5 border-r border-gray-200 bg-white shadow-sm overflow-hidden">
         {/* Header and Tabs */}
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">Notifications</h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            Faculty Notifications
+          </h2>
           <button className="text-gray-500 hover:text-gray-700">
             <MoreHorizontal className="h-5 w-5" />
           </button>
         </div>
 
         <div className="flex border-b border-gray-200 bg-gray-50">
-          {(["All", "Tasks", "Mentions", "Projects", "System"] as const).map(
-            (tab) => (
-              <button
-                key={tab}
-                className={`flex-1 py-3 text-sm font-medium transition-colors relative ${
-                  activeTab === tab
-                    ? "text-blue-600 bg-white"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab}
-                {activeTab === tab && (
-                  <motion.div
-                    layoutId="activeTabIndicator"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
-                  />
-                )}
-              </button>
-            )
-          )}
+          {(
+            ["All", "Classes", "Meetings", "Submissions", "Admin"] as const
+          ).map((tab) => (
+            <button
+              key={tab}
+              className={`flex-1 py-3 text-sm font-medium transition-colors relative ${
+                activeTab === tab
+                  ? "text-blue-600 bg-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab}
+              {activeTab === tab && (
+                <motion.div
+                  layoutId="activeTabIndicator"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
+                />
+              )}
+            </button>
+          ))}
         </div>
 
         {/* Search Bar */}
@@ -357,7 +441,7 @@ const NotificationPage: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search notifications..."
+              placeholder="Search academic alerts..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
             />
           </div>
@@ -443,96 +527,12 @@ const NotificationPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Details Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {selectedNotification.type === "mentioned" && (
-                <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-                  <h4 className="font-semibold text-gray-800 mb-3">
-                    You were mentioned in a comment
-                  </h4>
-                  <div className="flex items-start space-x-3 mb-4">
-                    <UserAvatar user={selectedNotification.user} size="sm" />
-                    <div>
-                      <p className="font-medium text-gray-900 leading-none">
-                        {selectedNotification.user?.name}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {selectedNotification.timestamp}
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-gray-700 text-sm">
-                    {selectedNotification.commentContext}
-                  </p>
-                </div>
-              )}
-
-              {selectedNotification.relatedDetails && (
-                <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-                  <h4 className="font-semibold text-gray-800 mb-3">Related</h4>
-                  <a
-                    href="#"
-                    className="flex items-center text-blue-600 hover:underline text-sm mb-3"
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    {selectedNotification.relatedDetails}
-                  </a>
-                  {selectedNotification.detailSender && (
-                    <div className="flex items-center text-sm text-gray-600">
-                      <span className="mr-2">Sent by</span>
-                      <UserAvatar
-                        user={selectedNotification.detailSender}
-                        size="sm"
-                      />
-                      <span className="ml-2 font-medium">
-                        {selectedNotification.detailSender.name}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* General notification content if not specific mention/related */}
-              {selectedNotification.type !== "mentioned" &&
-                !selectedNotification.relatedDetails && (
-                  <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-                    <p
-                      className="text-gray-800 text-base"
-                      dangerouslySetInnerHTML={{
-                        __html: selectedNotification.message,
-                      }}
-                    />
-                    {selectedNotification.user && (
-                      <div className="flex items-center text-sm text-gray-600 mt-4">
-                        <span className="mr-2">From</span>
-                        <UserAvatar
-                          user={selectedNotification.user}
-                          size="sm"
-                        />
-                        <span className="ml-2 font-medium">
-                          {selectedNotification.user.name}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 mt-auto">
-                <button className="flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                  <Reply className="h-4 w-4 mr-2" />
-                  Reply
-                </button>
-                <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  View Thread
-                </button>
-              </div>
-            </div>
+            {/* Render Contextual Details */}
+            <FacultyNotificationDetails notif={selectedNotification} />
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-500 text-lg">
-            Select a notification to view details
+            Select an alert to view details
           </div>
         )}
       </div>
