@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+// 💡 Import ThemeProvider from the components folder
+import { ThemeProvider } from "./components/ThemeContext";
 import AnimatedLandingPage from "./components/AnimatedLandingPage";
 import DashboardLayout from "./components/DashboardLayout";
 import HomePage from "./pages/HomePage";
@@ -10,22 +12,20 @@ import ReportsPage from "./pages/ReportsPage";
 import CalendarPage from "./pages/CalendarPage";
 import ContactsPage from "./pages/ContactsPage";
 import NotificationPage from "./pages/NotificationPage";
+import ProfilePage from "./pages/ProfilePage";
+import SettingsPage from "./pages/SettingsPage";
 
-function App() {
+// Refactor component holding the routes
+const AppRoutes = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const handleLogin = () => {
-    // This is the key change. After login, set isAuthenticated to true.
-    // The router will then automatically handle the next render and navigate
-    // the user to the dashboard route based on your logic.
     setIsAuthenticated(true);
   };
 
   return (
     <Routes>
-      {/* This is the Public route for the login/landing page. 
-        It only renders if the user is NOT authenticated.
-      */}
+      {/* Public/Login Route */}
       <Route
         path="/"
         element={
@@ -37,17 +37,14 @@ function App() {
         }
       />
 
-      {/* This is the Protected route for the dashboard. 
-        It only renders if the user IS authenticated. 
-        If not, they are redirected to the root ("/").
-      */}
+      {/* Protected Dashboard Route */}
       <Route
         path="/dashboard/*"
         element={
           isAuthenticated ? <DashboardLayout /> : <Navigate to="/" replace />
         }
       >
-        {/* Nested Routes inside the DashboardLayout */}
+        {/* Nested Routes */}
         <Route path="home" element={<HomePage />} />
         <Route path="overview" element={<OverviewPage />} />
         <Route path="faculty" element={<FacultyPage />} />
@@ -56,14 +53,25 @@ function App() {
         <Route path="reports" element={<ReportsPage />} />
         <Route path="contacts" element={<ContactsPage />} />
         <Route path="notifications" element={<NotificationPage />} />
+        <Route path="profile" element={<ProfilePage />} />
+        <Route path="settings" element={<SettingsPage />} />
 
         {/* Redirect "/dashboard" to "/dashboard/home" */}
         <Route index element={<Navigate to="home" replace />} />
       </Route>
 
-      {/* Catch-all route for any undefined paths */}
+      {/* Catch-all route */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+  );
+};
+
+// 💡 The main App component wraps the routes with ThemeProvider
+function App() {
+  return (
+    <ThemeProvider>
+      <AppRoutes />
+    </ThemeProvider>
   );
 }
 

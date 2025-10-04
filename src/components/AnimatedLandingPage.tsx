@@ -1,6 +1,10 @@
-// src/components/AnimatedLandingPage.tsx
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useRef, useEffect } from "react";
+import {
+  motion,
+  AnimatePresence,
+  useInView,
+  animate, // 💡 FIX: Import the standalone animate function
+} from "framer-motion";
 import {
   GraduationCap,
   ArrowRight,
@@ -16,13 +20,144 @@ import {
   Zap,
   BarChart,
   FileText,
+  Heart, // New icon for Satisfaction Rate
+  Trophy,
 } from "lucide-react";
 import LoginPage from "../pages/LoginPage";
-import landingPhoto from "../assets/landingphoto.png";
+import landingPhoto from "../assets/landingphoto.png"; // Ensure this path is correct
 
 interface AnimatedLandingPageProps {
   onLogin?: () => void;
 }
+
+// --- QuickStats Component with Counter Animation ---
+interface StatItem {
+  value: string;
+  label: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  color: string;
+  endValue: number;
+  format: (val: number) => string;
+}
+
+const QuickStats: React.FC = () => {
+  const stats: StatItem[] = [
+    {
+      value: "2,500+",
+      label: "Faculty Members",
+      icon: Users,
+      color: "text-blue-600",
+      endValue: 2500,
+      format: (val: number) => Math.round(val / 10) * 10 + "+",
+    },
+    {
+      value: "15,000+",
+      label: "Sessions Conducted",
+      icon: BookOpen,
+      color: "text-teal-600",
+      endValue: 15000,
+      format: (val: number) =>
+        (Math.round(val / 100) * 100).toLocaleString() + "+",
+    },
+    {
+      value: "98%",
+      label: "Satisfaction Rate",
+      icon: Heart,
+      color: "text-red-600",
+      endValue: 98,
+      format: (val: number) => Math.round(val) + "%",
+    },
+  ];
+
+  const ref = useRef(null);
+  // useInView hook triggers when the component scrolls into view
+  const isInView = useInView(ref, { once: true, amount: 0.5 });
+
+  const Counter: React.FC<{ stat: StatItem }> = ({ stat }) => {
+    const [currentValue, setCurrentValue] = useState(0);
+
+    useEffect(() => {
+      if (isInView) {
+        const controls = {
+          start: 0,
+          end: stat.endValue,
+          duration: 2,
+        };
+
+        // 💡 FIX: Use the standalone 'animate' function
+        const animation = animate(controls.start, controls.end, {
+          duration: controls.duration,
+          onUpdate: (latest) => {
+            setCurrentValue(latest);
+          },
+        });
+
+        return () => animation.stop();
+      }
+    }, [isInView, stat.endValue]);
+
+    return (
+      <motion.div
+        className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-800"
+        initial={{ opacity: 0, y: 20 }}
+        // Animate only when in view
+        animate={isInView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.5, delay: 0.3 }}
+      >
+        {stat.format(currentValue)}
+      </motion.div>
+    );
+  };
+
+  return (
+    // Outer container for the stats section
+    <div className="bg-white py-16 md:py-24 shadow-inner-top" ref={ref}>
+      <div className="max-w-screen-xl mx-auto px-6 md:px-12">
+        <motion.h2
+          className="text-3xl font-bold text-center text-gray-800 mb-12"
+          initial={{ opacity: 0, y: -20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5 }}
+        >
+          Our Impact at a Glance
+        </motion.h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          {stats.map((stat, index) => (
+            <motion.div
+              key={index}
+              className="bg-gray-50 p-8 rounded-2xl shadow-xl border-t-4 border-blue-600 flex flex-col items-center text-center space-y-4 transition-transform duration-300"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={isInView ? { opacity: 1, scale: 1 } : {}}
+              transition={{
+                duration: 0.6,
+                delay: index * 0.2 + 0.5,
+                type: "spring",
+                stiffness: 100,
+              }}
+              whileHover={{
+                scale: 1.03,
+                boxShadow:
+                  "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+              }}
+            >
+              <div
+                className={`p-4 rounded-full bg-opacity-10 ${stat.color.replace(
+                  "text",
+                  "bg"
+                )} bg-blue-100`}
+              >
+                <stat.icon className={`w-8 h-8 ${stat.color}`} />
+              </div>
+              <Counter stat={stat} />
+              <p className="text-lg font-medium text-gray-600">{stat.label}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+// --- End QuickStats Component ---
 
 const AnimatedLandingPage: React.FC<AnimatedLandingPageProps> = ({
   onLogin,
@@ -238,6 +373,10 @@ const AnimatedLandingPage: React.FC<AnimatedLandingPageProps> = ({
         </main>
       </div>
 
+      {/* QUICK STATS SECTION */}
+      <QuickStats />
+      {/* ------------------- */}
+
       {/* Login Modal */}
       <AnimatePresence>
         {showLogin && (
@@ -273,7 +412,7 @@ const AnimatedLandingPage: React.FC<AnimatedLandingPageProps> = ({
   );
 };
 
-// Modernized Footer Component
+// Modernized Footer Component (No changes)
 const Footer: React.FC = () => {
   return (
     <footer className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white py-12">

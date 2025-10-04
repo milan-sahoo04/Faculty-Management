@@ -11,8 +11,12 @@ import {
   FileText,
   Filter,
   Eye,
+  X, // Added for modal close button
+  ChevronDown, // Added for dropdown
+  FileTextIcon, // Used for Word/PDF
+  FileSpreadsheet, // Used for Excel
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 // --- Data Definitions (Moved outside component for better organization/reusability) ---
 
@@ -63,6 +67,7 @@ const categoryPerformanceData = [
     completion: 96.2,
     avgRating: 4.8,
     color: "bg-purple-500",
+    id: "cs",
   },
   {
     category: "Mathematics",
@@ -71,6 +76,7 @@ const categoryPerformanceData = [
     completion: 94.1,
     avgRating: 4.6,
     color: "bg-blue-500",
+    id: "math",
   },
   {
     category: "Chemistry",
@@ -79,6 +85,7 @@ const categoryPerformanceData = [
     completion: 93.8,
     avgRating: 4.7,
     color: "bg-orange-500",
+    id: "chemistry",
   },
   {
     category: "Physics",
@@ -87,6 +94,7 @@ const categoryPerformanceData = [
     completion: 92.5,
     avgRating: 4.5,
     color: "bg-green-500",
+    id: "physics",
   },
   {
     category: "Biology",
@@ -95,6 +103,7 @@ const categoryPerformanceData = [
     completion: 95.1,
     avgRating: 4.9,
     color: "bg-teal-500",
+    id: "biology",
   },
   {
     category: "English Literature",
@@ -103,6 +112,7 @@ const categoryPerformanceData = [
     completion: 89.3,
     avgRating: 4.4,
     color: "bg-red-500",
+    id: "english",
   },
 ];
 
@@ -192,19 +202,18 @@ const reportTemplatesData = [
   },
 ];
 
-// --- Export Functionality (New/Modified) ---
+// --- Export Utility Functions ---
 
 /**
- * Converts data to CSV format and triggers a download.
- * Includes Key Metrics and Category Performance in the CSV.
+ * Handles CSV export (download immediately)
  */
-const handleExportReport = (metrics, categories, period) => {
+const exportToCSV = (metrics, categories, period) => {
   // 1. Key Metrics Header
   let csvContent =
     "Key Metrics for " +
     period.charAt(0).toUpperCase() +
     period.slice(1) +
-    "\n";
+    " Period\n";
   csvContent += "Metric,Value,Change\n";
 
   // 2. Key Metrics Data
@@ -240,36 +249,235 @@ const handleExportReport = (metrics, categories, period) => {
   link.setAttribute("href", url);
   link.setAttribute(
     "download",
-    `Faculty_Report_${new Date().toISOString().slice(0, 10)}.csv`
+    `Faculty_Report_${period}_${new Date().toISOString().slice(0, 10)}.csv`
   );
-  link.style.visibility = "hidden"; // Hide the element
+  link.style.visibility = "hidden";
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link); // Clean up
-  console.log("Exporting report...");
+  document.body.removeChild(link);
+  console.log("Exporting report as CSV...");
 };
 
-// Placeholder functions for other actions
-const handleFilter = () => console.log("Opening filter options...");
-const handleViewAllFaculty = () =>
-  console.log("Navigating to all faculty performance reports...");
-const handleExportCategoryData = () =>
-  console.log("Exporting category data...");
-const handleCreateCustomReport = () =>
-  console.log("Opening custom report creation tool...");
-const handleViewReport = (reportName) =>
-  console.log(`Viewing report: ${reportName}`);
-const handleDownloadReport = (reportName) =>
-  console.log(`Downloading report: ${reportName}`);
+/**
+ * Placeholder for PDF export
+ */
+const exportToPDF = (data) => {
+  console.log(
+    `[PDF Export] Generating PDF report for ${data.period}. This typically requires a library (like jsPDF) or server-side processing.`
+  );
+  alert(`Generating PDF Report for ${data.period}. (See console for details)`);
+};
+
+/**
+ * Placeholder for MS Word export
+ */
+const exportToWord = (data) => {
+  console.log(
+    `[Word Export] Generating MS Word (.docx) report for ${data.period}. This requires a specialized library or server-side processing.`
+  );
+  alert(
+    `Generating MS Word Report for ${data.period}. (See console for details)`
+  );
+};
+
+// --- Custom Components ---
+
+/**
+ * Custom Modal for viewing a report.
+ */
+const ReportViewModal = ({ isOpen, onClose, reportName, description }) => {
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col"
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+              <h2 className="text-2xl font-bold text-indigo-700">
+                Viewing: {reportName}
+              </h2>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Modal Content - Simulated Report UI */}
+            <div className="p-6 overflow-y-auto flex-grow bg-gray-50 border-b border-gray-200">
+              <div className="bg-white p-8 rounded-lg shadow-inner border border-dashed border-gray-300 min-h-[500px]">
+                <h3 className="text-xl font-semibold mb-4 border-b pb-2">
+                  Executive Summary
+                </h3>
+                <p className="text-gray-600 mb-6">{description}</p>
+
+                <div className="grid grid-cols-3 gap-4 mb-8">
+                  <div className="p-4 bg-blue-50 rounded-lg text-center">
+                    <p className="text-4xl font-extrabold text-blue-600">
+                      {reportMetricsData[0].value}
+                    </p>
+                    <p className="text-sm text-gray-600">Total Sessions</p>
+                  </div>
+                  <div className="p-4 bg-green-50 rounded-lg text-center">
+                    <p className="text-4xl font-extrabold text-green-600">
+                      {reportMetricsData[1].value}
+                    </p>
+                    <p className="text-sm text-gray-600">Faculty Utilization</p>
+                  </div>
+                  <div className="p-4 bg-purple-50 rounded-lg text-center">
+                    <p className="text-4xl font-extrabold text-purple-600">
+                      {reportMetricsData[3].value}
+                    </p>
+                    <p className="text-sm text-gray-600">Completion Rate</p>
+                  </div>
+                </div>
+
+                <h3 className="text-xl font-semibold mb-4 border-b pb-2">
+                  Detailed Category Breakdown
+                </h3>
+                <ul className="space-y-3">
+                  {categoryPerformanceData.slice(0, 3).map((cat, i) => (
+                    <li
+                      key={i}
+                      className="flex justify-between border-b last:border-b-0 py-2"
+                    >
+                      <span className="font-medium text-gray-700">
+                        {cat.category}
+                      </span>
+                      <span className="text-sm text-green-600 font-semibold">
+                        {cat.completion}% Complete
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-gray-400 mt-6">
+                  *This is a simplified preview. The full downloaded report
+                  contains more pages and charts.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 flex justify-end space-x-3 bg-white">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Close Preview
+              </button>
+              <button className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+                <Download className="w-4 h-4 inline mr-2" /> Download Full
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
 
 // --- ReportsPage Component ---
 
 const ReportsPage = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("month");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    name: "",
+    description: "",
+  });
+
+  // --- Filtering Logic Implementation ---
+
+  // 1. Filter Category Performance Data
+  const getFilteredCategoryData = (categories, categoryId) => {
+    if (categoryId === "all") {
+      return categories;
+    }
+    // We filter based on the 'id' property we added to the data
+    return categories.filter((item) => item.id === categoryId);
+  };
+
+  const filteredCategoryPerformanceData = getFilteredCategoryData(
+    categoryPerformanceData,
+    selectedCategory
+  );
+
+  // NOTE: In a real application, reportMetricsData, facultyPerformanceData,
+  // and sessionTrendsData would also be filtered/refetched based on selectedPeriod and selectedCategory.
+
+  // --- Action Handlers ---
+
+  const handleExportClick = (format) => {
+    setIsExportDropdownOpen(false); // Close dropdown
+
+    const dataPackage = {
+      metrics: reportMetricsData,
+      categories: filteredCategoryPerformanceData, // Use filtered data
+      period: selectedPeriod,
+    };
+
+    if (format === "csv") {
+      exportToCSV(
+        dataPackage.metrics,
+        dataPackage.categories,
+        dataPackage.period
+      );
+    } else if (format === "excel") {
+      exportToExcel(dataPackage);
+    } else if (format === "pdf") {
+      exportToPDF(dataPackage);
+    } else if (format === "word") {
+      exportToWord(dataPackage);
+    }
+  };
+
+  const handleFilter = () => console.log("Opening advanced filter options...");
+
+  const handleViewReport = (template) => {
+    setModalState({
+      isOpen: true,
+      name: template.name,
+      description: template.description,
+    });
+  };
+
+  const handleCloseModal = () => {
+    setModalState({ isOpen: false, name: "", description: "" });
+  };
+
+  const handleExportCategoryData = () =>
+    console.log("Exporting category data...");
+  const handleCreateCustomReport = () =>
+    console.log("Opening custom report creation tool...");
+  const handleDownloadReport = (reportName) =>
+    console.log(`Downloading pre-configured report: ${reportName}`);
 
   return (
     <div className="p-6 max-w-7xl mx-auto font-sans bg-gray-50 min-h-screen">
+      {/* Report View Modal */}
+      <ReportViewModal
+        isOpen={modalState.isOpen}
+        onClose={handleCloseModal}
+        reportName={modalState.name}
+        description={modalState.description}
+      />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">
         <div>
@@ -281,7 +489,7 @@ const ReportsPage = () => {
             analytics.
           </p>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex space-x-3 relative">
           <motion.button
             onClick={handleFilter}
             className="bg-white border border-gray-300 text-gray-700 px-5 py-2.5 rounded-xl font-medium hover:bg-gray-100 transition-colors flex items-center shadow-sm"
@@ -291,31 +499,81 @@ const ReportsPage = () => {
             <Filter className="w-4 h-4 mr-2" />
             Filter
           </motion.button>
+
+          {/* Export Dropdown Button */}
           <motion.button
-            // UPDATED: Pass data and selectedPeriod to the export function
-            onClick={() =>
-              handleExportReport(
-                reportMetricsData,
-                categoryPerformanceData,
-                selectedPeriod
-              )
-            }
+            onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
             className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-indigo-700 transition-colors flex items-center shadow-lg"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
             <Download className="w-4 h-4 mr-2" />
             Export Report
+            <ChevronDown
+              className={`w-4 h-4 ml-2 transition-transform ${
+                isExportDropdownOpen ? "rotate-180" : "rotate-0"
+              }`}
+            />
           </motion.button>
+
+          {/* Export Dropdown Menu */}
+          <AnimatePresence>
+            {isExportDropdownOpen && (
+              <motion.div
+                className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl overflow-hidden z-20 border border-gray-100"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="p-2">
+                  <button
+                    onClick={() => handleExportClick("csv")}
+                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 mr-2 text-green-600" />{" "}
+                    CSV (Data Only)
+                  </button>
+                  <button
+                    onClick={() => handleExportClick("excel")}
+                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 mr-2 text-green-600" />{" "}
+                    MS Excel
+                  </button>
+                  <button
+                    onClick={() => handleExportClick("pdf")}
+                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                  >
+                    <FileTextIcon className="w-4 h-4 mr-2 text-red-600" /> PDF
+                    (Print Ready)
+                  </button>
+                  <button
+                    onClick={() => handleExportClick("word")}
+                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                  >
+                    <FileTextIcon className="w-4 h-4 mr-2 text-blue-600" /> MS
+                    Word
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
+
       {/* Period and Category Selectors */}
       <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-4 mb-8">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="period-select"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Time Period
           </label>
+          {/* NOTE: Period change currently only affects state and export text */}
           <select
+            id="period-select"
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
             className="border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
@@ -327,10 +585,15 @@ const ReportsPage = () => {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="category-select"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Category
           </label>
+          {/* Filter is implemented here */}
           <select
+            id="category-select"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
@@ -344,7 +607,7 @@ const ReportsPage = () => {
         </div>
       </div>
 
-      {/* --- */}
+      <hr className="mb-8 border-gray-200" />
 
       {/* Key Metrics */}
       <h2 className="text-xl font-bold text-gray-900 mb-4">Key Metrics</h2>
@@ -388,11 +651,11 @@ const ReportsPage = () => {
         ))}
       </div>
 
-      {/* --- */}
+      <hr className="mb-8 border-gray-200" />
 
       {/* Charts & Performance */}
       <div className="grid lg:grid-cols-2 gap-8 mb-12">
-        {/* Session Trends Chart */}
+        {/* Session Trends Chart (Static bar representation) */}
         <div className="bg-white rounded-xl shadow-md border p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900">
@@ -420,6 +683,7 @@ const ReportsPage = () => {
                     <div className="flex-1 bg-gray-200 rounded-full h-2">
                       <div
                         className="bg-indigo-500 h-2 rounded-full"
+                        // Assuming 156 is the max for scaling the sessions bar
                         style={{ width: `${(trend.sessions / 156) * 100}%` }}
                       ></div>
                     </div>
@@ -442,10 +706,7 @@ const ReportsPage = () => {
             <h2 className="text-lg font-semibold text-gray-900">
               Top Faculty Performance
             </h2>
-            <button
-              onClick={handleViewAllFaculty}
-              className="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors"
-            >
+            <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors">
               View All
             </button>
           </div>
@@ -494,7 +755,7 @@ const ReportsPage = () => {
         </div>
       </div>
 
-      {/* --- */}
+      <hr className="mb-8 border-gray-200" />
 
       {/* Category Performance Table */}
       <h2 className="text-xl font-bold text-gray-900 mb-4">
@@ -504,6 +765,16 @@ const ReportsPage = () => {
         <div className="flex items-center justify-between mb-6">
           <p className="text-gray-600 text-sm">
             A breakdown of key metrics by subject category.
+            {selectedCategory !== "all" && (
+              <span className="ml-2 font-medium text-indigo-600">
+                (Filtered by:{" "}
+                {
+                  categoryPerformanceData.find((c) => c.id === selectedCategory)
+                    ?.category
+                }
+                )
+              </span>
+            )}
           </p>
           <motion.button
             onClick={handleExportCategoryData}
@@ -538,7 +809,8 @@ const ReportsPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {categoryPerformanceData.map((category, index) => (
+              {/* Using the filtered data here */}
+              {filteredCategoryPerformanceData.map((category, index) => (
                 <tr key={index} className="hover:bg-gray-50 transition-colors">
                   <td className="py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -586,7 +858,7 @@ const ReportsPage = () => {
         </div>
       </div>
 
-      {/* --- */}
+      <hr className="mb-8 border-gray-200" />
 
       {/* Report Templates */}
       <h2 className="text-xl font-bold text-gray-900 mb-4">Report Templates</h2>
@@ -625,13 +897,15 @@ const ReportsPage = () => {
                   </div>
                 </div>
                 <div className="flex space-x-2 flex-shrink-0">
+                  {/* View Report Button - Opens Modal */}
                   <motion.button
-                    onClick={() => handleViewReport(template.name)}
+                    onClick={() => handleViewReport(template)}
                     className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
                     whileHover={{ scale: 1.1 }}
                   >
                     <Eye className="w-5 h-5" />
                   </motion.button>
+                  {/* Download Button */}
                   <motion.button
                     onClick={() => handleDownloadReport(template.name)}
                     className="p-2 rounded-full text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 transition-colors"
