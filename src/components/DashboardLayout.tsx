@@ -1,5 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
-import { NavLink, useLocation, Outlet, useNavigate } from "react-router-dom";
+// src/components/DashboardLayout.tsx
+
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   Home,
   BarChart3,
@@ -15,33 +17,185 @@ import {
   LogOut,
   ChevronDown,
   User,
-  Palette,
   Moon,
   Sun,
   Zap,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-// 💡 CORRECTED IMPORT: Use relative path from the same 'components' directory
 import { useTheme } from "./ThemeContext";
+import { useAuth } from "./AuthContext";
+
+// 💡 FIX 1: Import the default image to ensure correct bundling
+import defaultUserPhoto from "../assets/milan.png";
 
 // --- Types ---
 interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  requiredRole?: "admin" | "student" | "all"; // Role-based access control field
 }
 
-// --- Placeholder for Logout Logic ---
-const handleLogout = (navigate: ReturnType<typeof useNavigate>) => {
-  console.log("User logged out");
-  navigate("/");
+interface MockFaculty {
+  id: string;
+  name: string;
+  role: string;
+  department: string;
+  email: string;
+}
+
+// --- MOCK DATA: Simulate your Faculty Database/API Call ---
+const mockFacultyData: MockFaculty[] = [
+  {
+    id: "milan-sharma",
+    name: "Dr. Milan Sharma",
+    role: "Assoc. Professor",
+    department: "Computer Science",
+    email: "milan.sharma@uni.edu",
+  },
+  {
+    id: "anya-smith",
+    name: "Dr. Anya Smith",
+    role: "Professor",
+    department: "Physics",
+    email: "anya.smith@uni.edu",
+  },
+  {
+    id: "john-doe",
+    name: "Prof. John Doe",
+    role: "Lecturer",
+    department: "Mathematics",
+    email: "john.doe@uni.edu",
+  },
+  {
+    id: "jane-wilson",
+    name: "Dr. Jane Wilson",
+    role: "Assoc. Professor",
+    department: "Biology",
+    email: "jane.wilson@uni.edu",
+  },
+];
+
+// ---------------------------------------------
+// --- FacultySearch Component (DEFINED HERE) ---
+// ---------------------------------------------
+const FacultySearch: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [resultsOpen, setResultsOpen] = useState(false);
+  const navigate = useNavigate();
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // 1. Filter results based on search term
+  const filteredFaculty = useMemo(() => {
+    if (!searchTerm) return [];
+    const lowerCaseTerm = searchTerm.toLowerCase();
+    return mockFacultyData.filter(
+      (faculty) =>
+        faculty.name.toLowerCase().includes(lowerCaseTerm) ||
+        faculty.department.toLowerCase().includes(lowerCaseTerm) ||
+        faculty.email.toLowerCase().includes(lowerCaseTerm)
+    );
+  }, [searchTerm]);
+
+  // 2. Handle selection and navigation
+  const handleSelectFaculty = (facultyId: string) => {
+    setSearchTerm("");
+    setResultsOpen(false);
+    navigate(`/dashboard/faculty/${facultyId}`);
+  };
+
+  // 3. Close results on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setResultsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <div ref={searchRef} className="relative flex-1 max-w-lg hidden sm:block">
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Search className="h-5 w-5 text-gray-400" />
+        </div>
+        <input
+          className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg leading-5 bg-gray-50 dark:bg-gray-900 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+          placeholder="Search Faculty by name, dept, or email..."
+          type="search"
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setResultsOpen(true);
+          }}
+          onFocus={() => setResultsOpen(true)}
+        />
+      </div>
+
+      {/* Search Results Dropdown */}
+      <AnimatePresence>
+        {searchTerm && resultsOpen && filteredFaculty.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.15 }}
+            className="absolute mt-1 w-full rounded-lg shadow-xl bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-30 max-h-60 overflow-y-auto"
+          >
+            {filteredFaculty.map((faculty) => (
+              <motion.button
+                key={faculty.id}
+                onClick={() => handleSelectFaculty(faculty.id)}
+                className="w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors flex flex-col items-start"
+                whileHover={{ backgroundColor: "rgba(99, 102, 241, 0.1)" }}
+              >
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  {faculty.name}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {faculty.role} · {faculty.department}
+                </span>
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+        {searchTerm && resultsOpen && filteredFaculty.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute mt-1 w-full rounded-lg shadow-xl bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-500 z-30"
+          >
+            No faculty found matching "{searchTerm}".
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 };
 
-// --- UserProfileDropdown Component (UPDATED with Dark Mode classes) ---
+// ---------------------------------------------
+// --- UserProfileDropdown Component ---
+// ---------------------------------------------
 const UserProfileDropdown = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { user, logout, role } = useAuth(); // Read role for display
+
+  // Combined logout and navigation handler
+  const handleUserLogout = async () => {
+    await logout();
+    setDropdownOpen(false);
+    navigate("/", { replace: true });
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -59,6 +213,12 @@ const UserProfileDropdown = () => {
     };
   }, []);
 
+  const userName =
+    user?.displayName || (role === "admin" ? "Admin User" : "Student User");
+  const userEmail =
+    user?.email || (role === "admin" ? "admin@app.com" : "student@app.com");
+  const userPhoto = user?.photoURL || defaultUserPhoto;
+
   return (
     <div ref={dropdownRef} className="relative flex items-center ml-4">
       <motion.button
@@ -68,15 +228,15 @@ const UserProfileDropdown = () => {
       >
         <img
           className="h-9 w-9 rounded-full object-cover"
-          src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=2960&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-          alt="Admin User Profile"
+          src={userPhoto}
+          alt={`${userName} Profile`}
         />
         <div className="hidden md:flex flex-col items-start ml-3 mr-1">
           <div className="text-sm font-medium text-gray-800 dark:text-gray-100">
-            Admin User
+            {userName}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
-            Administrator
+            {role === "admin" ? "Administrator" : "Student"}
           </div>
         </div>
         <ChevronDown
@@ -94,21 +254,19 @@ const UserProfileDropdown = () => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ duration: 0.2 }}
-            // 💡 Dark Mode Classes added here
             className="absolute top-12 right-0 mt-2 w-56 rounded-xl shadow-2xl py-1 bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50 origin-top-right"
           >
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
               <p className="font-semibold text-gray-900 dark:text-white">
-                Admin User
+                {userName}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                admin@app.com
+                {userEmail}
               </p>
             </div>
 
             <NavLink
               to="/dashboard/profile"
-              // 💡 Dark Mode Classes added here
               className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-900 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
               onClick={() => setDropdownOpen(false)}
             >
@@ -118,7 +276,6 @@ const UserProfileDropdown = () => {
 
             <NavLink
               to="/dashboard/settings"
-              // 💡 Dark Mode Classes added here
               className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-900 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
               onClick={() => setDropdownOpen(false)}
             >
@@ -127,8 +284,7 @@ const UserProfileDropdown = () => {
             </NavLink>
 
             <button
-              onClick={() => handleLogout(navigate)}
-              // 💡 Dark Mode Classes added here
+              onClick={handleUserLogout}
               className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900 transition-colors border-t border-gray-100 dark:border-gray-700 mt-1"
             >
               <LogOut className="h-4 w-4 mr-3" />
@@ -141,12 +297,13 @@ const UserProfileDropdown = () => {
   );
 };
 
-// --- SidebarContent Component (UPDATED with Dark Mode classes) ---
-const SidebarContent: React.FC<{ navigation: NavItem[]; location: any }> = ({
+// ---------------------------------------------
+// --- SidebarContent Component ---
+// ---------------------------------------------
+const SidebarContent: React.FC<{ navigation: NavItem[] }> = ({
   navigation,
-  location,
+  // 🛑 REMOVED: location, // Unused prop that caused a type error
 }) => (
-  // 💡 Dark Mode Background and Border added here
   <div className="flex flex-col flex-grow bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 pt-5 pb-4 overflow-y-auto shadow-xl lg:shadow-none">
     <div className="flex items-center flex-shrink-0 px-4">
       <Target className="h-8 w-8 text-indigo-600" />
@@ -164,8 +321,7 @@ const SidebarContent: React.FC<{ navigation: NavItem[]; location: any }> = ({
               `group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                 isActive
                   ? "bg-indigo-600 text-white shadow-lg transform translate-x-1"
-                  : // 💡 Dark Mode Text and Hover classes added here
-                    "text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600"
               }`
             }
           >
@@ -194,28 +350,100 @@ const SidebarContent: React.FC<{ navigation: NavItem[]; location: any }> = ({
   </div>
 );
 
-// --- DashboardLayout Component (UPDATED with Dark Mode classes) ---
+// ---------------------------------------------
+// --- DashboardLayout Component (Main Export) ---
+// ---------------------------------------------
 const DashboardLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showBlast, setShowBlast] = useState(false);
-  const location = useLocation();
+  // 🛑 REMOVED: location variable is no longer passed to SidebarContent
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useTheme();
+  const { user, loading, role } = useAuth(); // Read role for filtering
 
-  const navigation: NavItem[] = [
-    { name: "Home", href: "/dashboard/home", icon: Home },
-    { name: "Overview", href: "/dashboard/overview", icon: BarChart3 },
-    { name: "Faculty", href: "/dashboard/faculty", icon: Users },
-    { name: "Categories", href: "/dashboard/categories", icon: FolderOpen },
-    { name: "Reports", href: "/dashboard/reports", icon: FileText },
-    { name: "Calendar", href: "/dashboard/calender", icon: Target },
-    { name: "Contacts", href: "/dashboard/contacts", icon: Users },
-    { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
-    { name: "Profile", href: "/dashboard/profile", icon: User },
-    { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  // 🚀 MASTER NAVIGATION LIST with Role Definitions
+  const allNavigation: NavItem[] = [
+    // Links visible to ALL (default requiredRole is 'all')
+    { name: "Home", href: "/dashboard/home", icon: Home, requiredRole: "all" },
+    {
+      name: "Notifications",
+      href: "/dashboard/notifications",
+      icon: Bell,
+      requiredRole: "all",
+    },
+    {
+      name: "Profile",
+      href: "/dashboard/profile",
+      icon: User,
+      requiredRole: "all",
+    },
+    {
+      name: "Settings",
+      href: "/dashboard/settings",
+      icon: Settings,
+      requiredRole: "all",
+    },
+
+    // Links visible ONLY to Admin
+    {
+      name: "Overview",
+      href: "/dashboard/overview",
+      icon: BarChart3,
+      requiredRole: "admin",
+    },
+    {
+      name: "Faculty",
+      href: "/dashboard/faculty",
+      icon: Users,
+      requiredRole: "admin",
+    },
+    {
+      name: "Categories",
+      href: "/dashboard/categories",
+      icon: FolderOpen,
+      requiredRole: "admin",
+    },
+    {
+      name: "Reports",
+      href: "/dashboard/reports",
+      icon: FileText,
+      requiredRole: "admin",
+    },
+
+    // Links visible to Student AND Admin (Student-focused pages)
+    {
+      name: "Calendar",
+      href: "/dashboard/calender",
+      icon: Target,
+      requiredRole: "student",
+    },
+    {
+      name: "Contacts",
+      href: "/dashboard/contacts",
+      icon: Users,
+      requiredRole: "student",
+    },
   ];
 
-  const isHomePage = location.pathname === "/dashboard/home";
+  // 🚀 FILTERED NAVIGATION LOGIC
+  const navigation = useMemo(() => {
+    if (loading || !role) return []; // Hide navigation while loading or if no role is set
+
+    return allNavigation.filter((item) => {
+      // If role is admin, show everything
+      if (role === "admin") {
+        return true;
+      }
+      // If role is student, only show 'student' or 'all' links
+      if (
+        role === "student" &&
+        (item.requiredRole === "student" || item.requiredRole === "all")
+      ) {
+        return true;
+      }
+      return false;
+    });
+  }, [role, loading]);
 
   // Handler for Notification Click
   const handleNotificationClick = () => {
@@ -225,18 +453,40 @@ const DashboardLayout: React.FC = () => {
   // Handler for theme toggle with animation
   const handleThemeToggle = () => {
     if (!isDarkMode) {
-      // Only show the blast when switching TO dark mode
       setShowBlast(true);
     }
     toggleTheme();
-    // Hide the blast after the animation is visible
-    setTimeout(() => setShowBlast(false), 500); // Should match animation duration
+    setTimeout(() => setShowBlast(false), 500);
   };
 
+  // 🚀 AUTH REDIRECTION: If not loading AND no user, redirect to login
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/", { replace: true });
+    }
+  }, [loading, user, navigate]);
+
+  // 🚀 LOADING SCREEN: Show a loading indicator while checking auth state
+  if (loading || !user || !role) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        >
+          <Zap className="h-12 w-12 text-indigo-600" />
+        </motion.div>
+        <p className="ml-4 text-lg text-gray-700 dark:text-gray-300">
+          Loading Dashboard...
+        </p>
+      </div>
+    );
+  }
+
+  // If loading is false, user exists, and role is fetched, render dashboard
   return (
-    // 💡 MAIN CONTAINER: Apply dark mode background
     <div className="h-screen bg-gray-50 dark:bg-gray-900 flex overflow-hidden">
-      {/* Mobile sidebar overlay (No change needed) */}
+      {/* Mobile sidebar overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -264,25 +514,24 @@ const DashboardLayout: React.FC = () => {
                   <X className="h-6 w-6 text-white" />
                 </button>
               </div>
-              <SidebarContent navigation={navigation} location={location} />
+              <SidebarContent navigation={navigation} />
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Desktop sidebar (No change needed - styles handled in SidebarContent) */}
+      {/* Desktop sidebar */}
       <div className="hidden lg:flex lg:flex-shrink-0">
         <div className="flex flex-col w-64">
-          <SidebarContent navigation={navigation} location={location} />
+          <SidebarContent navigation={navigation} />
         </div>
       </div>
 
       {/* Main content */}
       <div className="flex-1 overflow-hidden flex flex-col">
-        {/* Top navigation (UPDATED with Dark Mode classes) */}
+        {/* Top navigation */}
         <div className="relative z-20 flex-shrink-0 flex h-16 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
           <motion.button
-            // 💡 Dark Mode Border and Text added here
             className="px-4 border-r border-gray-200 dark:border-gray-700 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 lg:hidden"
             onClick={() => setSidebarOpen(true)}
             whileTap={{ scale: 0.9 }}
@@ -295,29 +544,14 @@ const DashboardLayout: React.FC = () => {
           </motion.button>
 
           <div className="flex-1 px-4 flex justify-between items-center">
-            {/* Search - Conditionally rendered (UPDATED with Dark Mode classes) */}
-            {isHomePage && (
-              <div className="flex-1 max-w-lg hidden sm:block">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    // 💡 Dark Mode Background, Text, and Border added here
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg leading-5 bg-gray-50 dark:bg-gray-900 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
-                    placeholder="Search sessions, faculty, reports..."
-                    type="search"
-                  />
-                </div>
-              </div>
-            )}
+            {/* 🚀 Feature: Faculty Search Component Integration */}
+            <FacultySearch />
 
-            {/* Right side icons and profile (UPDATED with Dark Mode classes) */}
+            {/* Right side icons and profile */}
             <div className="ml-auto flex items-center space-x-2 sm:space-x-4">
               {/* Dark Mode Toggle Button */}
               <motion.button
                 onClick={handleThemeToggle}
-                // 💡 Dark Mode Text and Hover added here
                 className="p-2 rounded-full text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors relative"
                 whileTap={{ scale: 0.9 }}
                 aria-label={
@@ -333,22 +567,20 @@ const DashboardLayout: React.FC = () => {
 
               <motion.button
                 onClick={handleNotificationClick}
-                // 💡 Dark Mode Text and Hover added here
                 className="p-2 rounded-full text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 relative"
                 whileTap={{ scale: 0.9 }}
               >
                 <Bell className="h-6 w-6" />
-                {/* 💡 Dark Mode Ring added here */}
                 <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-gray-800" />
               </motion.button>
 
-              {/* User Profile Dropdown (Styles handled in its component) */}
+              {/* User Profile Dropdown */}
               <UserProfileDropdown />
             </div>
           </div>
         </div>
 
-        {/* The "Bomb Blast" Animation Overlay (No change needed) */}
+        {/* The "Bomb Blast" Animation Overlay */}
         <AnimatePresence>
           {showBlast && (
             <motion.div
@@ -360,7 +592,7 @@ const DashboardLayout: React.FC = () => {
               }}
               animate={{
                 opacity: 0.8,
-                scale: 200, // Explode to cover the screen
+                scale: 200,
                 transition: { duration: 0.3, ease: "easeOut" },
               }}
               exit={{
@@ -376,7 +608,6 @@ const DashboardLayout: React.FC = () => {
 
         {/* Page content */}
         <main className="flex-1 relative overflow-y-auto focus:outline-none">
-          {/* Outlet is where the new ProfilePage and SettingsPage will render */}
           <Outlet />
         </main>
       </div>
@@ -384,5 +615,4 @@ const DashboardLayout: React.FC = () => {
   );
 };
 
-// Export DashboardLayout
 export default DashboardLayout;

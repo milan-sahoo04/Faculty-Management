@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+// src/components/ProfilePage.tsx
+
+import React, { useState, useRef, useEffect } from "react";
 import {
   User,
   Mail,
@@ -15,12 +17,17 @@ import {
   Heart,
   BarChart,
   Download,
-  Users,
   Zap,
   Lock,
   FileText,
   ArrowLeftRight,
+  PlusCircle,
+  AlertTriangle,
 } from "lucide-react";
+
+// --- IMPORTANT: Update the import for your profile photo ---
+// 💡 Based on your file structure (src/assets/milan.png), this path is correct.
+import defaultMilanPhoto from "../assets/milan.png";
 
 // --- Local Storage Initialization and Data Types ---
 
@@ -33,7 +40,7 @@ interface ProfileData {
   office: string;
   officeHours: string;
   bio: string;
-  imageUrl: string;
+  imageUrl: string; // Stored as a URL (either external, local asset, or object URL)
 
   // Academic Data
   researchInterests: string[];
@@ -51,16 +58,17 @@ interface ProfileData {
 }
 
 const defaultProfile: ProfileData = {
-  name: "Dr. Anya Sharma",
+  // 🚀 CUSTOMIZATION 1: Set your default name
+  name: "Dr. Milan Sharma",
   role: "Associate Professor",
   department: "Computer Science",
-  email: "a.sharma@uni.edu",
+  email: "milan.sharma@uni.edu",
   phone: "+1 (555) 987-6543",
   office: "ENG-304",
   officeHours: "Tues/Thurs: 2:00 PM - 4:00 PM",
   bio: "Specializing in Artificial Intelligence and Machine Learning. Dedicated to fostering critical thinking and hands-on experience in students.",
-  imageUrl:
-    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1976&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Mock photo
+  // 🚀 CUSTOMIZATION 2: Use the imported local asset for the default photo
+  imageUrl: defaultMilanPhoto,
 
   researchInterests: [
     "Artificial Intelligence",
@@ -82,8 +90,8 @@ const defaultProfile: ProfileData = {
     },
   ],
   externalLinks: [
-    { label: "LinkedIn", url: "https://linkedin.com/dranya" },
-    { label: "ResearchGate", url: "https://researchgate.net/dranya" },
+    { label: "LinkedIn", url: "https://linkedin.com/drmilan" },
+    { label: "ResearchGate", url: "https://researchgate.net/drmilan" },
   ],
 
   emergencyContact: {
@@ -100,7 +108,27 @@ const defaultProfile: ProfileData = {
 
 const getInitialProfile = (): ProfileData => {
   const stored = localStorage.getItem("facultyProfile");
-  if (stored) return JSON.parse(stored);
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      // Ensure the imageUrl has a fallback if the stored data is old
+      if (
+        !parsed.imageUrl ||
+        parsed.imageUrl.startsWith("https://images.unsplash.com")
+      ) {
+        // Fallback to the new local asset if no image is stored or it's the old default URL
+        return {
+          ...parsed,
+          imageUrl: defaultMilanPhoto,
+          name: "Dr. Milan Sharma",
+        };
+      }
+      return parsed;
+    } catch (e) {
+      console.error("Failed to parse local storage profile", e);
+      return defaultProfile;
+    }
+  }
   return defaultProfile;
 };
 
@@ -127,15 +155,54 @@ const ProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<ProfileData>(getInitialProfile);
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
-  const [passwordRequired, setPasswordRequired] = useState(false); // State for Private Info access
+  const [passwordRequired, setPasswordRequired] = useState(false);
+
+  // Ref for the hidden file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Clean up Object URL when component unmounts or image changes
+  useEffect(() => {
+    return () => {
+      // Revoke the object URL if it exists and is not the default one
+      if (profile.imageUrl && profile.imageUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(profile.imageUrl);
+      }
+    };
+  }, [profile.imageUrl]);
 
   // Function to handle saving/editing mode
   const handleSave = () => {
     if (isEditing) {
+      // Save current state to local storage
       localStorage.setItem("facultyProfile", JSON.stringify(profile));
       alert("✅ Profile changes saved successfully!");
     }
     setIsEditing(!isEditing);
+  };
+
+  // Function to handle image file selection
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+
+      // Revoke previous object URL if it exists
+      if (profile.imageUrl && profile.imageUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(profile.imageUrl);
+      }
+
+      // Create a new object URL for the selected file
+      const newImageUrl = URL.createObjectURL(file);
+
+      // Update the profile state
+      setProfile((prev) => ({ ...prev, imageUrl: newImageUrl }));
+    }
+  };
+
+  // Helper to trigger the hidden file input
+  const triggerImageUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   // Simulate password check for private info access
@@ -509,11 +576,24 @@ const ProfilePage: React.FC = () => {
       <div className="bg-white rounded-xl shadow-2xl overflow-hidden p-6 md:p-10">
         {/* Header Section (Image, Role) */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start border-b pb-8">
-          <img
-            className="h-28 w-28 rounded-full object-cover shadow-lg ring-4 ring-indigo-100"
-            src={profile.imageUrl}
-            alt={`${profile.name} Profile`}
-          />
+          <div className="relative">
+            <img
+              className="h-28 w-28 rounded-full object-cover shadow-lg ring-4 ring-indigo-100"
+              src={profile.imageUrl}
+              alt={`${profile.name} Profile`}
+            />
+            {/* Image overlay button for upload - visible when editing */}
+            {isEditing && (
+              <button
+                onClick={triggerImageUpload}
+                className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-full opacity-0 hover:opacity-100 transition-opacity"
+                aria-label="Change profile photo"
+              >
+                <Edit className="h-6 w-6 text-white" />
+              </button>
+            )}
+          </div>
+
           <div className="mt-4 sm:mt-0 sm:ml-6 text-center sm:text-left">
             <h2 className="text-3xl font-extrabold text-gray-900">
               {profile.name}
@@ -522,14 +602,24 @@ const ProfilePage: React.FC = () => {
               <GraduationCap className="h-6 w-6 mr-2 text-indigo-600" />
               {profile.role}, {profile.department}
             </p>
+            {/* Button to trigger the hidden file input */}
             <button
               className="mt-2 text-sm text-gray-500 hover:text-indigo-600 flex items-center mx-auto sm:mx-0"
-              onClick={() => alert("Photo upload logic needed here.")}
+              onClick={triggerImageUpload}
             >
               <Edit className="h-4 w-4 mr-1" /> Change Photo
             </button>
           </div>
         </div>
+
+        {/* Hidden File Input Element - Crucial for the upload feature */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleImageChange}
+          accept="image/*"
+          style={{ display: "none" }} // Hide the input visually
+        />
 
         {/* Tabs Navigation */}
         <div className="mt-6 border-b border-gray-200">
@@ -544,13 +634,13 @@ const ProfilePage: React.FC = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                                    ${
-                                      activeTab === tab.id
-                                        ? "border-indigo-500 text-indigo-600"
-                                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                                    } 
-                                    whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm flex items-center transition-colors
-                                `}
+                                        ${
+                                          activeTab === tab.id
+                                            ? "border-indigo-500 text-indigo-600"
+                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                        } 
+                                        whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm flex items-center transition-colors
+                                    `}
               >
                 <tab.icon className="h-5 w-5 mr-2" />
                 {tab.label}

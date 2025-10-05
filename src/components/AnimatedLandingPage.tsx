@@ -1,9 +1,12 @@
+// src/components/AnimatedLandingPage.tsx
+
 import React, { useState, useRef, useEffect } from "react";
 import {
   motion,
   AnimatePresence,
   useInView,
   animate, // 💡 FIX: Import the standalone animate function
+  Variants, // Import Variants type for better type safety
 } from "framer-motion";
 import {
   GraduationCap,
@@ -21,14 +24,10 @@ import {
   BarChart,
   FileText,
   Heart, // New icon for Satisfaction Rate
-  Trophy,
+  // 🛑 REMOVED: Trophy, // Unused import
 } from "lucide-react";
 import LoginPage from "../pages/LoginPage";
 import landingPhoto from "../assets/landingphoto.png"; // Ensure this path is correct
-
-interface AnimatedLandingPageProps {
-  onLogin?: () => void;
-}
 
 // --- QuickStats Component with Counter Animation ---
 interface StatItem {
@@ -48,6 +47,7 @@ const QuickStats: React.FC = () => {
       icon: Users,
       color: "text-blue-600",
       endValue: 2500,
+      // Format to round to nearest 10 and append "+"
       format: (val: number) => Math.round(val / 10) * 10 + "+",
     },
     {
@@ -56,6 +56,7 @@ const QuickStats: React.FC = () => {
       icon: BookOpen,
       color: "text-teal-600",
       endValue: 15000,
+      // Format to round to nearest 100, use locale string, and append "+"
       format: (val: number) =>
         (Math.round(val / 100) * 100).toLocaleString() + "+",
     },
@@ -65,6 +66,7 @@ const QuickStats: React.FC = () => {
       icon: Heart,
       color: "text-red-600",
       endValue: 98,
+      // Format to round to nearest integer and append "%"
       format: (val: number) => Math.round(val) + "%",
     },
   ];
@@ -84,7 +86,7 @@ const QuickStats: React.FC = () => {
           duration: 2,
         };
 
-        // 💡 FIX: Use the standalone 'animate' function
+        // Use the standalone 'animate' function from framer-motion
         const animation = animate(controls.start, controls.end, {
           duration: controls.duration,
           onUpdate: (latest) => {
@@ -141,6 +143,7 @@ const QuickStats: React.FC = () => {
               }}
             >
               <div
+                // Dynamically sets the background color (e.g., bg-blue-100) based on the text color (e.g., text-blue-600)
                 className={`p-4 rounded-full bg-opacity-10 ${stat.color.replace(
                   "text",
                   "bg"
@@ -159,20 +162,19 @@ const QuickStats: React.FC = () => {
 };
 // --- End QuickStats Component ---
 
-const AnimatedLandingPage: React.FC<AnimatedLandingPageProps> = ({
-  onLogin,
-}) => {
+const AnimatedLandingPage: React.FC = () => {
   const [showLogin, setShowLogin] = useState(false);
 
+  // Simplified handleLogin to only close the modal.
   const handleLogin = () => {
     setShowLogin(false);
-    if (onLogin) onLogin();
   };
 
-  const floatVariants = {
+  // Define floatVariants with Variants type for explicit type safety
+  const floatVariants: Variants = {
     initial: { y: 0, rotate: 0 },
     animate: (i: number) => ({
-      y: [0, -15 - i * 5, 0],
+      y: [0, -15 - i * 5, 0], // Custom variable 'i' for staggered animation
       rotate: [0, 5, -5, 0],
       transition: {
         duration: 8 + i * 2,
@@ -183,7 +185,7 @@ const AnimatedLandingPage: React.FC<AnimatedLandingPageProps> = ({
     }),
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
   };
@@ -401,6 +403,7 @@ const AnimatedLandingPage: React.FC<AnimatedLandingPageProps> = ({
               >
                 <X className="w-5 h-5 text-gray-600" />
               </button>
+              {/* NOTE: LoginPage internally handles the login logic, and AuthContext handles the state change that triggers the redirect in App.tsx */}
               <LoginPage onLogin={handleLogin} />
             </motion.div>
           </motion.div>

@@ -1,18 +1,17 @@
-// src/pages/LoginPage.tsx
 import React, { useState, useEffect } from "react";
 import {
   Target,
   Mail,
   Lock,
-  CircleCheck, // Make sure CircleCheck is imported for the welcome animation
-  FlaskConical, // Assuming these are still used in the left section as per previous solution
-  ClipboardList,
-  Dna,
-  BarChart2,
+  User, // For Full Name
+  Users, // For Department
+  Eye, // 🚀 Eye icon
+  EyeOff, // 🚀 EyeOff icon
 } from "lucide-react";
-import { auth, db, googleProvider } from "../firebase/firebaseConfig";
+import { useAuth } from "../components/AuthContext";
+
+import { auth, db } from "../firebase/firebaseConfig";
 import {
-  signInWithPopup,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
   sendEmailVerification,
@@ -24,11 +23,15 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
-import loginIllustration from "../assets/login.png"; // Your custom login image
+// Assuming you have this asset path correct
+import loginIllustration from "../assets/login.png";
 
 interface LoginPageProps {
   onLogin: () => void;
 }
+
+/* Local storage key for recent email */
+const LAST_EMAIL_KEY = "lastLoggedInEmail";
 
 /* Firebase error → friendly text */
 const friendlyFirebaseMessage = (err: any): string => {
@@ -41,7 +44,8 @@ const friendlyFirebaseMessage = (err: any): string => {
     case "auth/user-not-found":
       return "No account found with this email. Please sign up.";
     case "auth/wrong-password":
-      return "Incorrect password. Try again or reset your password.";
+    case "auth/invalid-credential":
+      return "Incorrect password or invalid email/password combination. Try again or reset your password.";
     case "auth/email-already-in-use":
       return "Email already in use. Try signing in or reset your password.";
     case "auth/weak-password":
@@ -50,15 +54,22 @@ const friendlyFirebaseMessage = (err: any): string => {
       return "This sign-in method is not enabled in Firebase console.";
     case "auth/credential-already-in-use":
       return "This phone/email is already linked to another account.";
+    case "auth/too-many-requests":
+      return "Too many sign-in attempts. Account temporarily locked for security. Please wait a few minutes or use 'Forgot password?'.";
     default:
-      return err?.message || "Authentication failed. Please try again.";
+      // Fallback message for debugging other issues
+      return `Authentication failed. Code: ${code}. Please check your Firebase Console and settings.`;
   }
 };
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+  const { loginWithGoogle } = useAuth();
+
   // Common fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Password Visibility Toggle
+  const [showPassword, setShowPassword] = useState(false);
 
   // Signup: phone & otp
   const [phone, setPhone] = useState("");
@@ -72,21 +83,36 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [fullName, setFullName] = useState("");
   const [department, setDepartment] = useState("");
 
+  // User Role Selection
+  const [userType, setUserType] = useState<"student" | "admin">("student");
+
   // UI state
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [welcome, setWelcome] = useState(false);
 
-  /* ---------- Google login ---------- */
+  /* ---------- Load recent email from local storage on mount ---------- */
+  useEffect(() => {
+    try {
+      const storedEmail = localStorage.getItem(LAST_EMAIL_KEY);
+      if (storedEmail) {
+        setEmail(storedEmail);
+      }
+    } catch (e) {
+      console.warn("Could not load email from local storage:", e);
+    }
+  }, []);
+
+  /* ---------- Google login (Uses useAuth context) ---------- */
   const handleGoogleLogin = async () => {
     setError(null);
     setLoading(true);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      console.log("Google user:", result.user);
+      // The context handles creation/login and role fetching
+      await loginWithGoogle();
       setWelcome(true);
-      setTimeout(onLogin, 1500); // Delay for welcome animation
+      setTimeout(onLogin, 1500);
     } catch (err) {
       console.error(err);
       setError(friendlyFirebaseMessage(err));
@@ -95,28 +121,32 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
   };
 
-  /* ---------- Email login ---------- */
+  /* ---------- Email login (Your main login function) ---------- */
   const handleEmailSignIn = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const cred = await signInWithEmailAndPassword(auth, email, password);
-      console.log("Signed in:", cred.user);
+      await signInWithEmailAndPassword(auth, email, password);
+
+      // 🔑 NEW: Save the successfully logged-in email to local storage
+      localStorage.setItem(LAST_EMAIL_KEY, email);
+
+      // onAuthStateChanged in AuthContext will fetch the role and trigger dashboard redirect
       setWelcome(true);
-      setTimeout(onLogin, 1500); // Delay for welcome animation
+      setTimeout(onLogin, 1500);
     } catch (err) {
       console.error(err);
-      setError(friendlyFirebaseMessage(err));
+      setError(friendlyFirebaseMessage(err)); // This handles the auth/invalid-credential error
     } finally {
       setLoading(false);
     }
   };
 
-  /* ---------- Phone OTP (Only if isSignup is true) ---------- */
+  /* ---------- Phone OTP Setup & Verification (No changes here) ---------- */
   const setupRecaptcha = () => {
     if ((window as any).recaptchaVerifier) {
-      (window as any).recaptchaVerifier.clear(); // Clear existing if any
+      (window as any).recaptchaVerifier.clear();
       (window as any).recaptchaVerifier = null;
     }
     (window as any).recaptchaVerifier = new RecaptchaVerifier(
@@ -165,7 +195,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     setLoading(true);
     try {
       const userCred = await confirmationResult.confirm(otp);
-      console.log("Phone verified:", userCred.user);
       setPhoneVerified(true);
       alert("Phone verified. Now complete your profile.");
     } catch (err) {
@@ -176,7 +205,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
   };
 
-  /* ---------- Finish Registration (Only if isSignup is true) ---------- */
+  /* ---------- Finish Registration (For Phone/Email Sign-up - No changes here) ---------- */
   const finishRegistration = async () => {
     setError(null);
     if (!phoneVerified) {
@@ -191,14 +220,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       setError("Enter your full name.");
       return;
     }
+
     setLoading(true);
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) throw { message: "No current user." };
 
       const emailCredential = EmailAuthProvider.credential(email, password);
+      // Link the email/password to the phone user
       await linkWithCredential(currentUser, emailCredential);
 
+      // Save the new user details and assign the selected role
       await setDoc(
         doc(db, "users", currentUser.uid),
         {
@@ -207,20 +239,24 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           phone: currentUser.phoneNumber || phone,
           fullName,
           department: department || null,
+          role: userType, // Using the selected userType
           createdAt: serverTimestamp(),
         },
         { merge: true }
       );
 
+      // 🔑 NEW: Save the successfully registered email to local storage
+      localStorage.setItem(LAST_EMAIL_KEY, email);
+
       try {
         await sendEmailVerification(currentUser);
-        alert("Verification email sent to " + email);
+        console.log("Verification email sent to " + email);
       } catch (e) {
         console.warn("sendEmailVerification failed", e);
       }
 
       setWelcome(true);
-      setTimeout(onLogin, 1500); // Delay for welcome animation
+      setTimeout(onLogin, 1500);
     } catch (err) {
       console.error("finishRegistration error:", err);
       setError(friendlyFirebaseMessage(err));
@@ -229,7 +265,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
   };
 
-  /* ---------- Forgot password ---------- */
+  /* ---------- Forgot password (No changes here) ---------- */
   const handleForgotPassword = async () => {
     setError(null);
     if (!email) {
@@ -248,7 +284,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
   };
 
-  /* ---------- Optional welcome animation hide after 1.5s ---------- */
+  /* ---------- Optional welcome animation hide after 1.5s (No changes here) ---------- */
   useEffect(() => {
     if (welcome) {
       const timer = setTimeout(() => setWelcome(false), 1500);
@@ -256,7 +292,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
   }, [welcome]);
 
-  /* ---------- UI ---------- */
+  /* ---------- UI (No significant changes to the look) ---------- */
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 overflow-hidden">
       <div id="recaptcha-container" />
@@ -287,11 +323,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             >
               {/* Header */}
               <div className="text-center mb-8">
-                {/* Image added here, above the main title */}
                 <img
                   src={loginIllustration}
                   alt="Login illustration"
-                  className="mx-auto mb-4 w-32 h-32 object-contain" // Adjust size as needed
+                  className="mx-auto mb-4 w-32 h-32 object-contain"
                 />
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
                   <Target className="w-8 h-8 text-white" />
@@ -332,7 +367,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   </div>
                 </div>
 
-                {/* Password */}
+                {/* Password Field with Eye Toggle */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Password
@@ -340,22 +375,39 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
-                      type="password"
+                      // Uses conditional type for password masking
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="At least 6 characters"
-                      className="w-full pl-10 pr-4 py-3 border rounded-lg"
+                      // Increased right padding to prevent text overlapping the eye icon
+                      className="w-full pl-10 pr-10 py-3 border rounded-lg"
                       required
                     />
+                    {/* Eye Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1 rounded-full hover:text-gray-600 transition"
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
                   </div>
                 </div>
 
-                {/* Signup-only */}
-                {isSignup && (
+                {/* Signup-only (Phone & OTP) */}
+                {isSignup && !phoneVerified && (
                   <>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        Phone
+                        Phone (e.g., +919876543210)
                       </label>
                       <input
                         type="tel"
@@ -363,6 +415,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="+919876543210"
                         className="w-full px-3 py-2 border rounded-lg"
+                        required
                       />
                     </div>
 
@@ -371,9 +424,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                         type="button"
                         onClick={sendOtpToPhone}
                         disabled={loading || otpSent}
-                        className="flex-1 bg-indigo-600 text-white px-3 py-2 rounded-lg"
+                        className="flex-1 bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 transition"
                       >
-                        {otpSent ? "OTP Sent" : "Send OTP"}
+                        {loading
+                          ? "Sending..."
+                          : otpSent
+                          ? "OTP Sent"
+                          : "Send OTP"}
                       </button>
                       {otpSent && (
                         <>
@@ -382,61 +439,95 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                             onChange={(e) => setOtp(e.target.value)}
                             placeholder="Enter OTP"
                             className="w-36 px-3 py-2 border rounded-lg"
+                            required
                           />
                           <button
                             type="button"
                             onClick={verifyOtp}
                             disabled={loading}
-                            className="bg-green-600 text-white px-3 py-2 rounded-lg"
+                            className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition"
                           >
-                            Verify OTP
+                            {loading ? "Verifying..." : "Verify OTP"}
                           </button>
                         </>
                       )}
                     </div>
-
-                    {phoneVerified && (
-                      <div className="mt-4 border-t pt-4">
-                        <h3 className="text-sm font-semibold mb-2">
-                          Profile Details
-                        </h3>
-                        <input
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                          placeholder="Full Name"
-                          className="w-full px-3 py-2 border rounded-lg mb-2"
-                        />
-                        <input
-                          value={department}
-                          onChange={(e) => setDepartment(e.target.value)}
-                          placeholder="Department (optional)"
-                          className="w-full px-3 py-2 border rounded-lg mb-2"
-                        />
-                        <button
-                          type="button"
-                          onClick={finishRegistration}
-                          disabled={loading}
-                          className="w-full bg-blue-600 text-white px-3 py-2 rounded-lg"
-                        >
-                          {loading ? "Finalizing..." : "Complete Registration"}
-                        </button>
-                      </div>
-                    )}
                   </>
                 )}
 
+                {/* Signup-only (Profile Details) */}
+                {isSignup && phoneVerified && (
+                  <div className="mt-4 border-t pt-4">
+                    <h3 className="text-sm font-semibold mb-2">
+                      Complete Profile
+                    </h3>
+
+                    <div className="relative mb-2">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Full Name"
+                        className="w-full pl-10 pr-4 py-3 border rounded-lg"
+                        required
+                      />
+                    </div>
+
+                    <div className="relative mb-4">
+                      <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        value={department}
+                        onChange={(e) => setDepartment(e.target.value)}
+                        placeholder="Department (optional)"
+                        className="w-full pl-10 pr-4 py-3 border rounded-lg"
+                      />
+                    </div>
+
+                    {/* ROLE SELECTION DROPDOWN */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        User Type
+                      </label>
+                      <select
+                        value={userType}
+                        onChange={(e) =>
+                          setUserType(e.target.value as "student" | "admin")
+                        }
+                        className="w-full px-3 py-3 border rounded-lg mb-4 bg-white"
+                        required
+                      >
+                        <option value="student">Student (Standard User)</option>
+                        <option value="admin">Admin (Full Access)</option>
+                      </select>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={finishRegistration}
+                      disabled={loading}
+                      className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
+                    >
+                      {loading ? "Finalizing..." : "Complete Registration"}
+                    </button>
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      Your role will be saved as **{userType}**.
+                    </p>
+                  </div>
+                )}
+
+                {/* Sign In button */}
                 {!isSignup && (
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg"
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
                   >
                     {loading ? "Signing in..." : "Sign In"}
                   </button>
                 )}
               </form>
 
-              {/* Google */}
+              {/* Google Button */}
               <button
                 type="button"
                 onClick={handleGoogleLogin}
@@ -471,6 +562,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 <button
                   onClick={handleForgotPassword}
                   className="text-blue-600 hover:text-blue-800"
+                  type="button"
                 >
                   Forgot password?
                 </button>
@@ -478,8 +570,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   onClick={() => {
                     setIsSignup((s) => !s);
                     setError(null);
+                    setOtpSent(false);
+                    setPhoneVerified(false);
+                    setConfirmationResult(null);
                   }}
                   className="text-blue-600 hover:text-blue-800"
+                  type="button"
                 >
                   {isSignup ? "Back to Sign In" : "Create account"}
                 </button>

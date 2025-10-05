@@ -471,7 +471,7 @@ const ShareDropdown: React.FC<ShareDropdownProps> = ({ events }) => {
 
 // --- Main Calendar Page Component ---
 const CalendarPage: React.FC = () => {
-  const [view, setView] = useState("month");
+  const [view, setView] = useState<"month" | "week" | "day">("month"); // Explicit type for clarity
   const [currentDate, setCurrentDate] = useState(new Date("2025-09-01"));
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [selectedCourse, setSelectedCourse] = useState("All Courses");
@@ -650,7 +650,41 @@ const CalendarPage: React.FC = () => {
         </div>
 
         {/* Filters and Actions */}
-        <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex flex-wrap gap-3 items-center mt-4 lg:mt-0">
+          {/* View Toggle (New Addition) */}
+          <div className="flex border border-gray-300 rounded-lg overflow-hidden text-sm font-medium shadow-sm">
+            <button
+              onClick={() => setView("month")}
+              className={`px-3 py-2 transition ${
+                view === "month"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Month
+            </button>
+            <button
+              onClick={() => setView("week")}
+              className={`px-3 py-2 transition border-l border-r border-gray-300 ${
+                view === "week"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Week
+            </button>
+            <button
+              onClick={() => setView("day")}
+              className={`px-3 py-2 transition ${
+                view === "day"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Day
+            </button>
+          </div>
+
           {/* Filter Dropdowns */}
           <div className="relative">
             <button
