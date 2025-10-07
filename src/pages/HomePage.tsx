@@ -14,8 +14,14 @@ import {
   Zap,
   Briefcase,
   Shield,
-  Loader, // New Icon for In Progress
-} from "lucide-react";
+  Loader,
+  Monitor,
+  BookOpen,
+  Mail,
+  Target,
+  Code,
+  Cloud,
+} from "lucide-react"; // Removed Search and ArrowRight
 import {
   motion,
   useMotionValue,
@@ -24,7 +30,14 @@ import {
   useInView,
 } from "framer-motion";
 
-// --- Mock Data for Dynamic Live Session Feature ---
+// 🚀 CRITICAL FIX: The file structure shows HomePage.tsx is in `src/pages/`
+// and the image is in `src/assets/`. To go from `pages` to `assets`, you must
+// go UP one directory (`..`) then DOWN into `assets`.
+import faculty from "../assets/faculty.png";
+
+const FACULTY_IMAGE_PLACEHOLDER_URL = faculty;
+
+// --- Mock Data ---
 const MOCK_LIVE_SESSION_DATA = {
   isLive: true,
   sessionTitle: "AI Fundamentals: Neural Networks",
@@ -32,7 +45,6 @@ const MOCK_LIVE_SESSION_DATA = {
   duration: "2:34:12",
 };
 
-// --- NEW MOCK DATA for Upcoming Sessions Widget ---
 const MOCK_UPCOMING_SESSIONS = [
   {
     id: 201,
@@ -60,7 +72,9 @@ const MOCK_UPCOMING_SESSIONS = [
   },
 ];
 
-// --- New Component for Animated Counting Stat ---
+// Removed MOCK_RECENT_FACULTY data
+
+// --- Component for Animated Counting Stat ---
 interface AnimatedStatProps {
   from: number;
   to: number;
@@ -68,7 +82,7 @@ interface AnimatedStatProps {
   suffix: string;
   label: string;
   colorClass: string;
-  isPercentage?: boolean; // Changed from isDecimal for clarity
+  isPercentage?: boolean;
 }
 
 const AnimatedStat = ({
@@ -92,8 +106,7 @@ const AnimatedStat = ({
 
   useEffect(() => {
     if (isInView) {
-      // Use to=to/100 for percentages to get the full number for animation
-      const target = isPercentage ? to : to;
+      const target = to;
       const controls = animate(count, target, { duration: duration });
       return controls.stop;
     }
@@ -102,8 +115,8 @@ const AnimatedStat = ({
   return (
     <motion.div
       ref={ref}
-      className="text-center p-6 rounded-lg bg-gray-50 border border-gray-200 cursor-default"
-      whileHover={{ scale: 1.05, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
+      className="text-center p-6 rounded-xl bg-gray-50 border border-gray-200 cursor-default"
+      whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
     >
       <motion.div className={`text-4xl font-extrabold ${colorClass} mb-1`}>
         <motion.span>{formattedValue}</motion.span>
@@ -114,21 +127,56 @@ const AnimatedStat = ({
   );
 };
 
+// --- Animated Icon Component for Hero ---
+const AnimatedHeroIcon: React.FC<{
+  Icon: React.ElementType;
+  delay: number;
+  size: number;
+  color: string;
+  style: React.CSSProperties;
+}> = ({ Icon, delay, size, color, style }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.5, ...style }}
+    animate={{
+      opacity: 1,
+      scale: 1,
+      y: [0, -10, 0], // Oscillate vertically
+      rotate: [0, 5, -5, 0], // Gently rotate
+    }}
+    transition={{
+      duration: 5,
+      delay: delay,
+      ease: "easeInOut",
+      repeat: Infinity,
+      repeatType: "reverse",
+      type: "tween",
+    }}
+    // IMPORTANT: Increased size (w-10/h-10) and stronger shadow for better visibility
+    className={`absolute rounded-full p-2 shadow-2xl ${color} z-30 w-10 h-10 flex items-center justify-center`}
+    style={style}
+  >
+    {/* Use a fixed icon size for consistency, regardless of the container size. */}
+    <Icon className={`w-5 h-5 text-white`} />
+  </motion.div>
+);
+
 // --- HomePage Component ---
 const HomePage = () => {
   const navigate = useNavigate();
 
   const handleNavigateTo = (path: string) => {
+    console.log(`Navigating to: ${path}`);
+    // FIX: Uncommenting this line to make navigation work in a real setup
     navigate(path);
   };
 
   const [liveSession] = useState(MOCK_LIVE_SESSION_DATA);
 
-  // --- NEW: Operational Metrics (Mini-Metrics) ---
+  // --- Operational Metrics (Mini-Metrics) ---
   const operationalMetrics = [
     {
       title: "Scheduled",
-      value: 45, // Mock data
+      value: 45,
       change: "+5",
       icon: Calendar,
       color: "text-yellow-600",
@@ -137,7 +185,7 @@ const HomePage = () => {
     },
     {
       title: "In Progress",
-      value: 3, // Mock data
+      value: 3,
       change: "+1",
       icon: Loader,
       color: "text-blue-600",
@@ -146,7 +194,7 @@ const HomePage = () => {
     },
     {
       title: "Completed Today",
-      value: 12, // Mock data
+      value: 12,
       change: "-2",
       icon: CheckCircle,
       color: "text-green-600",
@@ -155,7 +203,7 @@ const HomePage = () => {
     },
     {
       title: "Active Faculty",
-      value: 85, // Mock data
+      value: 85,
       change: "+3",
       icon: Users,
       color: "text-purple-600",
@@ -164,7 +212,7 @@ const HomePage = () => {
     },
   ];
 
-  // --- Data Definitions (Rest of your existing data) ---
+  // --- Getting Started Steps ---
   const steps = [
     {
       title: "Setup Your Account",
@@ -198,6 +246,7 @@ const HomePage = () => {
     },
   ];
 
+  // --- Quick Actions ---
   const quickActions = [
     {
       title: "Manage Faculty",
@@ -233,6 +282,7 @@ const HomePage = () => {
     },
   ];
 
+  // --- Activity Log ---
   const activityLog = [
     {
       text: "A new session on 'AI Fundamentals' has started.",
@@ -264,14 +314,16 @@ const HomePage = () => {
     <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans bg-gray-50 min-h-screen">
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-purple-700 to-blue-600 rounded-3xl p-8 lg:p-12 mb-8 text-white relative overflow-hidden shadow-2xl">
+        {/* Animated Background Gradients */}
         <div className="absolute inset-0 z-0 opacity-20">
           <div className="absolute top-0 left-0 w-36 h-36 bg-white rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2"></div>
           <div className="absolute bottom-0 right-0 w-48 h-48 bg-white rounded-full blur-3xl transform translate-x-1/2 translate-y-1/2"></div>
         </div>
 
-        <div className="relative z-10 flex flex-col-reverse md:flex-row items-center justify-between">
+        <div className="relative z-10 flex flex-col md:flex-row items-start justify-between">
+          {/* Text and Actions */}
           <div className="flex-1 mt-6 md:mt-0">
-            {/* Live Session Indicator - DYNAMICALLY RENDERED */}
+            {/* Live Session Indicator */}
             {liveSession.isLive && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
@@ -284,7 +336,7 @@ const HomePage = () => {
                 </span>
                 <span>LIVE Session: {liveSession.sessionTitle}</span>
                 <motion.button
-                  onClick={() => console.log("Join Live Session")} // Action to join the live session
+                  onClick={() => console.log("Join Live Session")}
                   className="ml-3 flex items-center bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded-full transition-colors text-xs"
                   whileTap={{ scale: 0.95 }}
                 >
@@ -294,18 +346,14 @@ const HomePage = () => {
               </motion.div>
             )}
 
-            <h1 className="text-3xl lg:text-5xl font-extrabold mb-4 leading-tight">
+            <h1 className="text-3xl lg:text-5xl font-extrabold mb-8 leading-tight">
               Welcome Back, Admin!
               <br className="hidden md:inline" />
               <span className="text-blue-200">
                 Streamline Your Faculty Management
               </span>
             </h1>
-            <p className="text-lg opacity-90 mb-6 max-w-xl">
-              Create, manage, and track faculty sessions with powerful
-              analytics. Perfect for educational institutions and training
-              organizations.
-            </p>
+
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
               <motion.button
                 onClick={() => handleNavigateTo("/dashboard/calender")}
@@ -327,17 +375,113 @@ const HomePage = () => {
               </motion.button>
             </div>
           </div>
-          <div className="flex-shrink-0 w-full max-w-xs md:max-w-sm ml-0 md:ml-6 mt-4 md:mt-0">
+
+          {/* Image and Animated Icons */}
+          <div className="flex-shrink-0 w-full max-w-xs md:max-w-sm ml-0 md:ml-6 mt-4 md:mt-0 relative">
+            {/* Image */}
             <img
-              src="https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-              alt="An illustration of a team collaborating on a dashboard"
-              className="rounded-xl shadow-2xl w-full h-auto object-cover"
+              src={FACULTY_IMAGE_PLACEHOLDER_URL}
+              alt="Faculty Member Profile"
+              className="rounded-full shadow-2xl w-full h-auto object-cover aspect-square border-4 border-white/50 relative z-10" // z-10 ensures image is above gradients
+              style={{ objectFit: "cover" }}
+            />
+            {/* Animated Icons - Now using z-30 for better visibility */}
+            {/* Row 1 */}
+            <AnimatedHeroIcon
+              Icon={Users}
+              delay={0.8}
+              size={6}
+              color="bg-indigo-500"
+              style={{ top: "5%", left: "-10%" }}
+            />
+            <AnimatedHeroIcon
+              Icon={Monitor}
+              delay={1.2}
+              size={5}
+              color="bg-green-500"
+              style={{ top: "0%", right: "15%" }}
+            />
+            <AnimatedHeroIcon
+              Icon={BookOpen}
+              delay={1.0}
+              size={7}
+              color="bg-red-500"
+              style={{ top: "15%", right: "-5%" }}
+            />
+
+            {/* Row 2 */}
+            <AnimatedHeroIcon
+              Icon={Calendar}
+              delay={2.0}
+              size={4}
+              color="bg-blue-500"
+              style={{ top: "35%", left: "-15%" }}
+            />
+            <AnimatedHeroIcon
+              Icon={Zap}
+              delay={2.5}
+              size={6}
+              color="bg-yellow-500"
+              style={{ top: "50%", right: "-10%" }}
+            />
+            <AnimatedHeroIcon
+              Icon={Briefcase}
+              delay={1.5}
+              size={5}
+              color="bg-orange-500"
+              style={{ top: "60%", left: "-5%" }}
+            />
+
+            {/* Row 3 */}
+            <AnimatedHeroIcon
+              Icon={Code}
+              delay={0.5}
+              size={4}
+              color="bg-pink-500"
+              style={{ bottom: "5%", left: "10%" }}
+            />
+            <AnimatedHeroIcon
+              Icon={Cloud}
+              delay={3.0}
+              size={6}
+              color="bg-teal-500"
+              style={{ bottom: "10%", right: "20%" }}
+            />
+            <AnimatedHeroIcon
+              Icon={Mail}
+              delay={1.8}
+              size={5}
+              color="bg-cyan-500"
+              style={{ bottom: "25%", left: "0%" }}
+            />
+
+            {/* Row 4 */}
+            <AnimatedHeroIcon
+              Icon={FileText}
+              delay={3.5}
+              size={4}
+              color="bg-purple-500"
+              style={{ bottom: "15%", right: "-5%" }}
+            />
+            <AnimatedHeroIcon
+              Icon={Target}
+              delay={2.2}
+              size={7}
+              color="bg-red-700"
+              style={{ top: "30%", right: "-15%" }}
+            />
+            <AnimatedHeroIcon
+              Icon={BarChart3}
+              delay={1.7}
+              size={5}
+              color="bg-green-700"
+              style={{ top: "70%", left: "5%" }}
             />
           </div>
         </div>
       </div>
 
-      {/* NEW: Operational Metrics / Status Cards */}
+      {/* Operational Metrics / Status Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {operationalMetrics.map((metric, index) => (
           <motion.div
@@ -376,9 +520,9 @@ const HomePage = () => {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
-        {/* Left Column: Getting Started & Upcoming Sessions */}
+        {/* Left Column: Upcoming Sessions & Getting Started */}
         <div className="lg:col-span-1 space-y-8">
-          {/* Upcoming Sessions Widget - NEW FEATURE */}
+          {/* Upcoming Sessions Widget */}
           <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
               <Clock className="w-5 h-5 text-indigo-500 mr-2" />
@@ -393,6 +537,7 @@ const HomePage = () => {
                     handleNavigateTo(`/dashboard/session/${session.id}`)
                   }
                   whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-4">
                     <Calendar className="w-5 h-5 text-indigo-600" />
@@ -494,7 +639,7 @@ const HomePage = () => {
                 <motion.button
                   key={index}
                   onClick={() => handleNavigateTo(action.path)}
-                  className={`flex flex-col items-center justify-center p-4 rounded-lg ${action.bgClass} text-center transition-transform duration-200`}
+                  className={`flex flex-col items-center justify-center p-4 rounded-xl ${action.bgClass} text-center transition-transform duration-200`}
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -507,9 +652,11 @@ const HomePage = () => {
             </div>
           </div>
 
+          {/* Removed: Faculty Quick Directory Widget */}
+
           {/* New Sections: What's New and Live Activity Feed */}
           <div className="grid lg:grid-cols-2 gap-8">
-            {/* What's New Section */}
+            {/* What's New Section (Using activityLog for both) */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -518,11 +665,10 @@ const HomePage = () => {
             >
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
                 <Bell className="w-5 h-5 text-gray-600 mr-2" />
-                What's New
+                System Notifications
               </h2>
               <ul className="space-y-4">
-                {/* Simplified Feature List (using your existing data) */}
-                {activityLog.map((item, index) => (
+                {activityLog.slice(0, 3).map((item, index) => (
                   <li key={index} className="flex items-start">
                     <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mr-4">
                       <item.icon className="w-5 h-5 text-gray-600" />
@@ -581,7 +727,7 @@ const HomePage = () => {
                 to={2500}
                 duration={1.5}
                 suffix="+"
-                label="Faculty Members"
+                label="Total Faculty Members"
                 colorClass="text-purple-600"
               />
               <AnimatedStat
@@ -594,12 +740,12 @@ const HomePage = () => {
               />
               <AnimatedStat
                 from={0}
-                to={98.3} // Use a decimal value to test the new formatting logic
+                to={98.3}
                 duration={1.5}
                 suffix="%"
                 label="Satisfaction Rate"
                 colorClass="text-green-600"
-                isPercentage={true} // Use new flag
+                isPercentage={true}
               />
             </div>
           </div>

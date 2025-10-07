@@ -1,6 +1,4 @@
-// src/components/AnimatedLandingPage.tsx
-
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   motion,
   AnimatePresence,
@@ -24,13 +22,54 @@ import {
   BarChart,
   FileText,
   Heart,
-  ChevronUp, // New icon for 'Back to Top'
-  ChevronDown, // New icon for 'Scroll Down' in Hero
+  ChevronUp,
+  ChevronDown,
+  Quote,
+  ChevronLeft, // Import for Left Arrow
+  ChevronRight, // Import for Right Arrow
 } from "lucide-react";
 import LoginPage from "../pages/LoginPage";
-import landingPhoto from "../assets/landingphoto.png"; // Ensure this path is correct
+import landingPhoto from "../assets/landingphoto.png";
+import photo1 from "../assets/photo1.png";
+import photo2 from "../assets/photo2.png";
+import photo3 from "../assets/photo3.png";
+import photo4 from "../assets/photo4.png";
+import photo5 from "../assets/photo5.png";
 
-// --- QuickStats Component with Counter Animation ---
+// --- NEW WAVE DIVIDER COMPONENT ---
+// This component uses a responsive SVG to create a wave-like separation.
+// It sits at the BOTTOM of a section and its 'fill' color should match the NEXT section's background.
+interface WaveDividerProps {
+  fillColor: string; // Tailwind class for fill color (e.g., 'fill-white', 'fill-blue-50')
+  flip?: boolean; // Optional: To flip the wave vertically for different transitions
+}
+
+const WaveDivider: React.FC<WaveDividerProps> = ({
+  fillColor,
+  flip = false,
+}) => (
+  <div
+    className={`relative w-full overflow-hidden ${
+      flip ? "transform rotate-180" : ""
+    }`}
+  >
+    <svg
+      className={`block w-full h-16 ${fillColor}`} // h-16 is a good height for a smooth transition
+      viewBox="0 0 1440 100" // Define the original viewBox
+      preserveAspectRatio="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M0,50 C240,150 480,0 720,50 C960,100 1200,50 1440,50 L1440,100 L0,100 Z"
+        className={fillColor}
+        fill="currentColor" // Use currentColor to inherit from fillColor class on the SVG
+      ></path>
+    </svg>
+  </div>
+);
+// --- END WAVE DIVIDER COMPONENT ---
+
+// --- QuickStats Component with Counter Animation (UPDATED background) ---
 interface StatItem {
   value: string;
   label: string;
@@ -107,6 +146,7 @@ const QuickStats: React.FC = () => {
   };
 
   return (
+    // Keep QuickStats as bg-white for now to contrast with the preceding Testimonials' bg-gray-50
     <div className="bg-white py-16 md:py-24 shadow-inner-top" ref={ref}>
       <div className="max-w-screen-xl mx-auto px-6 md:px-12">
         <motion.h2
@@ -152,12 +192,228 @@ const QuickStats: React.FC = () => {
           ))}
         </div>
       </div>
+      {/* ADD WAVE DIVIDER HERE to separate QuickStats (bg-white) from LocationMap (bg-blue-50) */}
+      <WaveDivider fillColor="fill-blue-50" />
     </div>
   );
 };
 // --- End QuickStats Component ---
 
-// --- AboutUs Section ---
+// --- Testimonials Section (UPDATED) ---
+// (Testimonials data and TestimonialCard component remain unchanged)
+const testimonials = [
+  // ... (Testimonials data as before)
+  {
+    quote:
+      "The integrated communication and document sharing features have streamlined my workflow immensely. I can focus more on teaching and less on administrative tasks.",
+    name: "Dr. Sandeep Sharma",
+    title: "Professor of Computer Science",
+    image: photo1,
+  },
+  {
+    quote:
+      "Being able to see all my course analytics and student progress reports in one place is a game-changer. The performance insights are robust and actionable.",
+    name: "Aisha Khan",
+    title: "Head of the Mathematics Department",
+    image: photo2,
+  },
+  {
+    quote:
+      "The system is incredibly intuitive. It helped me manage a large number of students and their diverse needs without getting overwhelmed.",
+    name: "Father of Manav",
+    title: "Parent, Class 9 | Bangalore",
+    image: photo3,
+  },
+  {
+    quote:
+      "The ability to connect with students instantly for doubt clearing has enhanced my teaching impact. It's truly a modern education tool.",
+    name: "Harshita",
+    title: "Student, Class 4 | Mumbai",
+    image: photo4,
+  },
+  {
+    quote:
+      "This platform fosters a great collaborative environment. Everything, from submitting assignments to getting feedback, is smooth and efficient.",
+    name: "Atri",
+    title: "Student, Class 9 | Kolkata",
+    image: photo5,
+  },
+];
+
+const TestimonialCard: React.FC<{ testimonial: (typeof testimonials)[0] }> = ({
+  testimonial,
+}) => (
+  <motion.div
+    key={testimonial.name}
+    className="bg-white p-6 rounded-2xl shadow-xl border-t-4 border-blue-500 h-full flex flex-col justify-between"
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0, scale: 0.9 }}
+    transition={{ duration: 0.5 }}
+  >
+    <Quote className="w-6 h-6 text-blue-500 mb-4" />
+    <p className="text-gray-600 text-base italic mb-6 flex-grow">
+      "{testimonial.quote}"
+    </p>
+
+    <div className="flex items-center space-x-4 pt-4 border-t border-gray-100">
+      <div className="relative">
+        {/* Testimonial Image Circle */}
+        <img
+          src={testimonial.image}
+          alt={testimonial.name}
+          className="w-16 h-16 rounded-full object-cover border-4 border-blue-500/20"
+        />
+        {/* Role badge overlay (Existing feature) */}
+        <div className="absolute -bottom-1 -right-1 bg-teal-500 p-1 rounded-full border-2 border-white">
+          {testimonial.title.includes("Professor") ||
+          testimonial.title.includes("Head") ? (
+            <GraduationCap className="w-3 h-3 text-white" />
+          ) : (
+            <Users className="w-3 h-3 text-white" />
+          )}
+        </div>
+      </div>
+      <div>
+        <h4 className="font-bold text-gray-800">{testimonial.name}</h4>
+        <p className="text-sm text-blue-600">{testimonial.title}</p>
+      </div>
+    </div>
+  </motion.div>
+);
+
+const TestimonialsSection: React.FC = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const totalTestimonials = testimonials.length;
+  const autoSlideInterval = useRef<number | null>(null);
+
+  // Function to move to the next slide
+  const nextSlide = useCallback(() => {
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % totalTestimonials);
+  }, [totalTestimonials]);
+
+  // Function to move to the previous slide
+  const prevSlide = () => {
+    setCurrentIndex(
+      (prevIndex) => (prevIndex - 1 + totalTestimonials) % totalTestimonials
+    );
+    resetAutoSlide();
+  };
+
+  // Function to reset and restart the auto-slide timer
+  const resetAutoSlide = () => {
+    if (autoSlideInterval.current) {
+      clearInterval(autoSlideInterval.current);
+    }
+    // Set a new interval for auto-sliding every 7 seconds
+    autoSlideInterval.current = setInterval(
+      nextSlide,
+      7000
+    ) as unknown as number;
+  };
+
+  // Start the auto-slide on mount
+  useEffect(() => {
+    resetAutoSlide();
+    // Clear the interval when the component unmounts
+    return () => {
+      if (autoSlideInterval.current) {
+        clearInterval(autoSlideInterval.current);
+      }
+    };
+  }, [nextSlide]);
+
+  // Manually clicking the arrows will reset the auto-slide timer
+  const handleManualSlide = (direction: "prev" | "next") => {
+    if (direction === "next") {
+      nextSlide();
+    } else {
+      prevSlide(); // prevSlide already calls resetAutoSlide inside it
+    }
+    resetAutoSlide();
+  };
+
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, amount: 0.5 });
+
+  return (
+    <section id="testimonials" className="bg-gray-50 pt-16 md:pt-24" ref={ref}>
+      <div className="max-w-screen-xl mx-auto px-6 md:px-12 relative">
+        <motion.h2
+          className="text-4xl md:text-5xl font-extrabold text-center text-gray-800 mb-16"
+          initial={{ opacity: 0, y: -30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8 }}
+        >
+          Our <span className="text-teal-600">Community's Voice</span>
+        </motion.h2>
+
+        <div className="relative w-full max-w-lg mx-auto">
+          {/* Testimonial Card Display */}
+          <div className="relative h-96">
+            <AnimatePresence initial={false} mode="wait">
+              <motion.div
+                key={currentIndex}
+                className="absolute inset-0"
+                initial={{ opacity: 0, x: 50, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: -50, scale: 0.95 }}
+                transition={{ duration: 0.5, type: "tween" }}
+              >
+                <TestimonialCard testimonial={testimonials[currentIndex]} />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Navigation Arrows */}
+          <motion.button
+            className="absolute top-1/2 -left-12 transform -translate-y-1/2 p-3 bg-white rounded-full shadow-lg text-blue-600 hover:bg-blue-50 transition-all z-20"
+            onClick={() => handleManualSlide("prev")}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </motion.button>
+          <motion.button
+            className="absolute top-1/2 -right-12 transform -translate-y-1/2 p-3 bg-white rounded-full shadow-lg text-blue-600 hover:bg-blue-50 transition-all z-20"
+            onClick={() => handleManualSlide("next")}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <ChevronRight className="w-6 h-6" />
+          </motion.button>
+        </div>
+
+        {/* Indicator Dots */}
+        <div className="flex justify-center space-x-2 mt-12 mb-16">
+          {" "}
+          {/* Increased bottom margin for section end */}
+          {testimonials.map((_, index) => (
+            <motion.button
+              key={index}
+              onClick={() => {
+                setCurrentIndex(index);
+                resetAutoSlide(); // Reset timer on dot click
+              }}
+              className={`w-3 h-3 rounded-full transition-colors duration-300 ${
+                index === currentIndex
+                  ? "bg-blue-600 scale-125 shadow-md"
+                  : "bg-gray-300 hover:bg-gray-400"
+              }`}
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.9 }}
+            />
+          ))}
+        </div>
+      </div>
+      {/* ADD WAVE DIVIDER HERE to separate Testimonials (bg-gray-50) from QuickStats (bg-white) */}
+      <WaveDivider fillColor="fill-white" />
+    </section>
+  );
+};
+// --- End Testimonials Section ---
+
+// --- AboutUs Section (UPDATED to add Wave Divider at the end) ---
 const AboutUsSection: React.FC = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.5 });
@@ -195,7 +451,7 @@ const AboutUsSection: React.FC = () => {
   ];
 
   return (
-    <section id="about" className="bg-blue-50 py-16 md:py-24" ref={ref}>
+    <section id="about" className="bg-blue-50 pt-16 md:pt-24" ref={ref}>
       <div className="max-w-screen-xl mx-auto px-6 md:px-12">
         <motion.h2
           className="text-4xl md:text-5xl font-extrabold text-center mb-6"
@@ -216,7 +472,7 @@ const AboutUsSection: React.FC = () => {
         </motion.p>
 
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16" // Added mb-16 to give space before the wave
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
           variants={{
@@ -243,11 +499,14 @@ const AboutUsSection: React.FC = () => {
           ))}
         </motion.div>
       </div>
+      {/* ADD WAVE DIVIDER HERE to separate AboutUs (bg-blue-50) from Testimonials (bg-gray-50) */}
+      <WaveDivider fillColor="fill-gray-50" />
     </section>
   );
 };
+// --- End AboutUs Section ---
 
-// --- LocationMap Section ---
+// --- LocationMap Section (UPDATED background and Wave Divider) ---
 const LocationMap: React.FC = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.5 });
@@ -256,7 +515,8 @@ const LocationMap: React.FC = () => {
     "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3167.3147817454254!2d-122.1748286846985!3d37.42747427982269!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x808fbb2c552554e9%3A0x628e9b6a71e89b25!2sStanford%20University!5e0!3m2!1sen!2sin!4v1633512000000!5m2!1sen!2sin";
 
   return (
-    <section id="map" className="bg-white py-16 md:py-24" ref={ref}>
+    // CHANGED: From bg-white to bg-blue-50 for better integration with the site's palette
+    <section id="map" className="bg-blue-50 pt-16 md:pt-24" ref={ref}>
       <div className="max-w-screen-xl mx-auto px-6 md:px-12">
         <motion.h2
           className="text-4xl md:text-5xl font-extrabold text-center text-gray-800 mb-6"
@@ -297,16 +557,25 @@ const LocationMap: React.FC = () => {
           ></iframe>
         </motion.div>
       </div>
+      {/* ADD WAVE DIVIDER HERE to separate LocationMap (bg-blue-50) from Footer (dark blue/indigo) */}
+      {/* We use 'fill-white' for the wave and flip it so the white "wave" comes up from the bottom */}
+      {/* This creates a clean line between the map section and the "Back to Top" section which is now inside the Conditional Content block. */}
+      {/* Note: I'll update AnimatedLandingPage to make the "Back to Top" area part of the map section, or the overall Conditional Content, to make the wave transition correctly. */}
+
+      {/* Since the Footer is dark and the Map is light, let's keep the map background light blue and add a custom visual break.
+      The Footer's gradient start color is 'blue-700', which is dark. We will use a wave here. */}
+      <WaveDivider fillColor="fill-blue-700" flip={true} />
     </section>
   );
 };
 // --- End LocationMap Section ---
 
+// --- AnimatedLandingPage (UPDATED to integrate Wave Dividers) ---
+
 const AnimatedLandingPage: React.FC = () => {
   const [showLogin, setShowLogin] = useState(false);
-  const [showContent, setShowContent] = useState(false); // New state for content toggle
+  const [showContent, setShowContent] = useState(false);
 
-  // Reference for scrolling to the new content section
   const contentRef = useRef<HTMLDivElement>(null);
 
   const handleLogin = () => {
@@ -315,7 +584,6 @@ const AnimatedLandingPage: React.FC = () => {
 
   const handleLearnMore = () => {
     setShowContent(true);
-    // Smooth scroll to the content after a short delay for animation
     setTimeout(() => {
       contentRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 500);
@@ -343,7 +611,7 @@ const AnimatedLandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 relative overflow-x-hidden flex flex-col">
       <div className="relative z-10 flex-grow flex flex-col">
-        {/* Header */}
+        {/* Header (unchanged) */}
         <header className="flex justify-between items-center p-6 md:px-12 md:py-8 w-full max-w-screen-2xl mx-auto">
           <motion.div
             initial={{ opacity: 0, x: -50 }}
@@ -392,7 +660,7 @@ const AnimatedLandingPage: React.FC = () => {
           </motion.div>
         </header>
 
-        {/* Hero Section (Always visible) */}
+        {/* Hero Section (unchanged) */}
         <main className="flex-1 flex items-center justify-center p-6 md:p-12 min-h-[calc(100vh-100px)]">
           <div className="max-w-screen-2xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
             {/* Left Content */}
@@ -449,7 +717,7 @@ const AnimatedLandingPage: React.FC = () => {
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </motion.button>
                 <motion.button
-                  onClick={handleLearnMore} // Use the new handler
+                  onClick={handleLearnMore}
                   className="px-8 py-4 border-2 border-gray-300 text-gray-700 font-medium rounded-xl hover:border-blue-400 hover:text-blue-700 transition-colors shadow-sm flex items-center space-x-2"
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
@@ -460,7 +728,7 @@ const AnimatedLandingPage: React.FC = () => {
               </motion.div>
             </motion.div>
 
-            {/* Right Section with Image and Floating Icons - IMPROVED STRUCTURE */}
+            {/* Right Section with Image and Floating Icons (unchanged) */}
             <div className="relative flex justify-center items-center lg:h-[600px] mt-8 lg:mt-0">
               <motion.div
                 className="w-full max-w-xl lg:max-w-none h-auto lg:h-5/6 relative z-10 rounded-3xl overflow-hidden shadow-2xl shadow-blue-300/50 border-4 border-white/50 cursor-pointer"
@@ -472,11 +740,11 @@ const AnimatedLandingPage: React.FC = () => {
                 <img
                   src={landingPhoto}
                   alt="Faculty Portal Dashboard"
-                  className="w-full h-full object-cover" // object-cover ensures aspect ratio is maintained
+                  className="w-full h-full object-cover"
                 />
               </motion.div>
 
-              {/* Floating Icons around the image (unchanged) */}
+              {/* Floating Icons around the image */}
               <motion.div
                 className="absolute -top-10 left-1/4 transform -translate-x-1/2"
                 variants={floatVariants}
@@ -532,7 +800,7 @@ const AnimatedLandingPage: React.FC = () => {
         </main>
       </div>
 
-      {/* Scroll Indicator */}
+      {/* Scroll Indicator (unchanged) */}
       {!showContent && (
         <motion.div
           className="absolute bottom-20 left-1/2 transform -translate-x-1/2 cursor-pointer p-3 rounded-full bg-blue-600/10 text-blue-600 animate-bounce"
@@ -554,21 +822,22 @@ const AnimatedLandingPage: React.FC = () => {
             exit={{ opacity: 0, y: 50 }}
             transition={{ duration: 0.8 }}
             className="flex-shrink-0"
-            ref={contentRef} // Reference for scrolling
+            ref={contentRef}
           >
-            {/* About Us */}
+            {/* About Us section now includes the WaveDivider */}
             <AboutUsSection />
-            <hr className="border-gray-200" />
-
-            {/* Quick Stats */}
+            {/* Testimonials section now includes the WaveDivider */}
+            <TestimonialsSection />
+            {/* Quick Stats section now includes the WaveDivider */}
             <QuickStats />
-            <hr className="border-gray-200" />
-
-            {/* Location Map */}
+            {/* Location Map section now includes the WaveDivider */}
             <LocationMap />
-            <hr className="border-gray-200" />
 
-            {/* Back to Top Button */}
+            {/* Back to Top Button is moved after the map and before the footer */}
+            {/* Since LocationMap now has a bg-blue-50 and ends with a dark-blue wave, 
+                        I'm placing the "Back to Top" button just before the footer without a separate container, 
+                        or we can keep it in its own white section for maximum visibility before the dark footer. 
+                        Let's put it back to its own bg-white div for clarity. */}
             <div className="text-center py-10 bg-white">
               <motion.button
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
@@ -619,7 +888,7 @@ const AnimatedLandingPage: React.FC = () => {
   );
 };
 
-// Modernized Footer Component (No functional changes, added a small style detail)
+// Modernized Footer Component (unchanged)
 const Footer: React.FC = () => {
   return (
     <footer className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white py-12">
@@ -678,7 +947,7 @@ const Footer: React.FC = () => {
                 href="#"
                 className="text-blue-100 hover:text-white transition-colors"
               >
-                Features
+                Academics
               </a>
             </li>
             <li>
@@ -686,7 +955,7 @@ const Footer: React.FC = () => {
                 href="#"
                 className="text-blue-100 hover:text-white transition-colors"
               >
-                How It Works
+                Research
               </a>
             </li>
             <li>
@@ -694,78 +963,48 @@ const Footer: React.FC = () => {
                 href="#"
                 className="text-blue-100 hover:text-white transition-colors"
               >
-                Testimonials
+                Admissions
               </a>
             </li>
           </ul>
         </div>
-
-        {/* Resources */}
-        <div>
-          <h4 className="text-lg font-semibold mb-5 text-blue-50">Resources</h4>
-          <ul className="space-y-3 text-sm">
-            <li>
-              <a
-                href="#"
-                className="text-blue-100 hover:text-white transition-colors"
-              >
-                Blog & News
-              </a>
-            </li>
-            <li>
-              <a
-                href="#"
-                className="text-blue-100 hover:text-white transition-colors"
-              >
-                Support Center
-              </a>
-            </li>
-            <li>
-              <a
-                href="#"
-                className="text-blue-100 hover:text-white transition-colors"
-              >
-                FAQs
-              </a>
-            </li>
-            <li>
-              <a
-                href="#"
-                className="text-blue-100 hover:text-white transition-colors"
-              >
-                Privacy Policy
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        {/* Contact Us */}
-        <div>
+        {/* Contact Info */}
+        <div className="md:col-span-2">
           <h4 className="text-lg font-semibold mb-5 text-blue-50">
-            Get in Touch
+            Contact Information
           </h4>
-          <ul className="space-y-3 text-sm text-blue-100">
+          <ul className="space-y-4 text-sm">
             <li className="flex items-start space-x-3">
-              <Mail className="w-5 h-5 text-blue-200 mt-0.5" />
-              <span>support@facultyportal.com</span>
+              <MapPin className="h-5 w-5 text-teal-400 mt-1 flex-shrink-0" />
+              <p className="text-blue-100">
+                123 University Drive, Knowledge City, State, 12345
+              </p>
             </li>
-            <li className="flex items-start space-x-3">
-              <Phone className="w-5 h-5 text-blue-200 mt-0.5" />
-              <span>+1 (234) 567-8900</span>
+            <li className="flex items-center space-x-3">
+              <Mail className="h-5 w-5 text-teal-400 flex-shrink-0" />
+              <a
+                href="mailto:info@facultyportal.edu"
+                className="text-blue-100 hover:text-white transition-colors"
+              >
+                info@facultyportal.edu
+              </a>
             </li>
-            <li className="flex items-start space-x-3">
-              <MapPin className="w-5 h-5 text-blue-200 mt-0.5" />
-              <span>
-                789 Innovation Drive, Suite 101, <br />
-                Campus City, CA 90210
-              </span>
+            <li className="flex items-center space-x-3">
+              <Phone className="h-5 w-5 text-teal-400 flex-shrink-0" />
+              <a
+                href="tel:+15551234567"
+                className="text-blue-100 hover:text-white transition-colors"
+              >
+                (555) 123-4567
+              </a>
             </li>
           </ul>
         </div>
       </div>
-
-      <div className="mt-12 pt-8 border-t border-blue-600 text-center text-sm text-blue-200">
-        © {new Date().getFullYear()} Faculty Portal. All rights reserved.
+      <div className="mt-10 pt-8 border-t border-blue-600 text-center text-sm text-blue-200 px-6">
+        <p>
+          &copy; {new Date().getFullYear()} Faculty Portal. All rights reserved.
+        </p>
       </div>
     </footer>
   );

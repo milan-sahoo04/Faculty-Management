@@ -34,8 +34,8 @@ const FACULTY_LIST = Object.entries(MOCK_USER_DATABASE)
   .filter(([id, data]) => data.role === "faculty")
   .map(([id, data]) => ({ id, name: data.name }));
 
-// --- Helper Function for Name Lookup (Unchanged) ---
-const getOtherUserName = (userId: string, currentRole: string) => {
+// --- Helper Function for Name Lookup (Enhanced for new users) ---
+const getOtherUserName = (userId: string) => {
   const user = MOCK_USER_DATABASE[userId];
   if (user) {
     return user.name;
@@ -47,13 +47,12 @@ const getOtherUserName = (userId: string, currentRole: string) => {
       .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
       .join(" ");
   }
+  // Fallback for new students/unknown UIDs
   return `User ${userId.substring(0, 6)}`;
 };
 
-// --- Helper Function to create a canonical chat ID ---
-// This ensures that the ID is the same regardless of which user initiates the chat
+// --- Helper Function to create a canonical chat ID (Unchanged) ---
 const createCanonicalChatId = (uid1: string, uid2: string): string => {
-  // Sort UIDs alphabetically and join with '--'
   return [uid1, uid2].sort().join("--");
 };
 
@@ -67,7 +66,7 @@ interface ChatListItem {
 }
 
 // -------------------------------------------------------------
-// NEW: Mock Faculty Search Panel Component for Students
+// Faculty Search Panel Component (Unchanged)
 // -------------------------------------------------------------
 
 interface FacultySearchPanelProps {
@@ -137,7 +136,7 @@ const FacultySearchPanel: React.FC<FacultySearchPanelProps> = ({
 };
 
 // -------------------------------------------------------------
-// MessagePage Component (Updated to use FacultySearchPanel)
+// MessagePage Component (Updated to pass role)
 // -------------------------------------------------------------
 const MessagePage: React.FC = () => {
   const { user, loading, role } = useAuth();
@@ -146,13 +145,15 @@ const MessagePage: React.FC = () => {
 
   const currentUserId = user?.uid;
   const currentUserRole = role;
+  // Get a display name for the new user, defaulting to 'User'
+  const currentUserName = user?.displayName || user?.email || "User";
 
   // Handler to set the selected chat, used by both the list and the search panel
   const handleSelectChat = (chat: ChatListItem) => {
     setSelectedChat(chat);
   };
 
-  // 1. Fetch Chat List: Conditional query based on role. (Unchanged logic)
+  // 1. Fetch Chat List: Conditional query based on role.
   useEffect(() => {
     if (!currentUserId || loading) return;
 
@@ -178,18 +179,14 @@ const MessagePage: React.FC = () => {
         };
         const chatRoomId = doc.id;
 
-        const otherUserId =
-          Object.keys(data.members).find(
-            (id) =>
-              id !== currentUserId && MOCK_USER_DATABASE[id]?.role === "student"
-          ) || Object.keys(data.members).find((id) => id !== currentUserId);
+        // Find the other user ID in the members list
+        const memberIds = Object.keys(data.members);
+        const otherUserId = memberIds.find((id) => id !== currentUserId);
 
         if (!otherUserId) return null;
 
-        const otherUserName = getOtherUserName(
-          otherUserId,
-          currentUserRole || "student"
-        );
+        // Use the simplified getOtherUserName helper
+        const otherUserName = getOtherUserName(otherUserId);
 
         const messagesRef = collection(db, "chats", chatRoomId, "messages");
         const lastMsgQuery = query(
@@ -228,21 +225,14 @@ const MessagePage: React.FC = () => {
       );
       setChatList(list);
 
-      // 💡 Crucial: If the user has a chat history, automatically select the first one.
+      // Select the first chat automatically if none is selected
       if (!selectedChat && list.length > 0) {
         setSelectedChat(list[0]);
-      }
-
-      // 💡 Important: If a user selects a chat via the search panel,
-      // we must check if that chat is now in the list and keep it selected.
-      if (selectedChat && !list.find((c) => c.id === selectedChat.id)) {
-        // This case handles when a new chat is created via the search panel
-        // but hasn't appeared in the list stream yet. We keep the manual selection.
       }
     });
 
     return () => unsubscribe();
-  }, [currentUserId, loading, currentUserRole, selectedChat]); // Keep selectedChat dependency to preserve manual selection
+  }, [currentUserId, loading, currentUserRole, selectedChat]);
 
   if (loading || !user || !currentUserId) {
     return (
@@ -265,7 +255,7 @@ const MessagePage: React.FC = () => {
         </div>
 
         {chatList.length === 0 && currentUserRole !== "admin" ? (
-          // 🔑 STUDENT/FACULTY: Show search/selection panel to start a new chat
+          // STUDENT/FACULTY: Show search/selection panel to start a new chat
           <FacultySearchPanel
             onSelectChat={handleSelectChat}
             currentUserId={currentUserId}
@@ -328,7 +318,8 @@ const MessagePage: React.FC = () => {
               <ChatComponent
                 chatRoomId={selectedChat.id} // Correctly passes the generated ID
                 currentUserId={currentUserId}
-                currentUserName={user.displayName || user.email || "User"}
+                currentUserName={currentUserName} // Use the robust display name
+                currentUserRole={currentUserRole || "student"} // 🔑 CRITICAL: Pass the actual role
               />
             </div>
           </div>

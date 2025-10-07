@@ -1,6 +1,5 @@
 // src/components/ChatComponent.tsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
-// 💡 IMPORTANT: Ensure this path is correct
 import { db } from "../firebase/firebaseConfig";
 import { Send } from "lucide-react";
 import {
@@ -18,9 +17,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 
-// 💡 REQUIRED FOR ROLE LOOKUP: You must import or define your user database here
-// For this example, we'll define a stripped-down version, but in a real app,
-// you'd need a way to look up the role of an arbitrary ID.
+// --- MOCK DATA (Must match MessagePage.tsx) ---
 const MOCK_USER_DATABASE: Record<string, { name: string; role: string }> = {
   "admin-uid-123": { name: "Dr. Milan Sharma (Admin)", role: "admin" },
   "student-uid-987": { name: "Aarav Singh (Student)", role: "student" },
@@ -29,7 +26,27 @@ const MOCK_USER_DATABASE: Record<string, { name: string; role: string }> = {
   "faculty-anya": { name: "Dr. Anya Smith", role: "faculty" },
   "faculty-john": { name: "Prof. John Doe", role: "faculty" },
   "faculty-jane": { name: "Dr. Jane Wilson", role: "faculty" },
-  // ... add your currentUserId and other user IDs here with their correct roles
+};
+
+// 🔑 UPDATED HELPER: Uses the current user's context to determine the role
+const getUserRole = (
+  userId: string,
+  currentUserId: string,
+  currentUserRole: string
+): string => {
+  // 1. Check Mock Database first
+  if (MOCK_USER_DATABASE[userId]?.role) {
+    return MOCK_USER_DATABASE[userId].role;
+  }
+
+  // 2. If the queried ID is the CURRENTLY logged-in user
+  if (userId === currentUserId) {
+    // Use the role determined by AuthContext (which should be 'student' for a new student)
+    return currentUserRole || "student";
+  }
+
+  // 3. Fallback for any other unknown ID (shouldn't happen with canonical IDs)
+  return "unknown";
 };
 
 interface ChatMessage {
@@ -39,30 +56,33 @@ interface ChatMessage {
   message: string;
   timestamp: Date;
 }
+
+// 🔑 UPDATED PROPS
 interface ChatProps {
-  chatRoomId: string; // This is now a unique two-party ID (e.g., 'user1id--user2id')
+  chatRoomId: string;
   currentUserId: string;
   currentUserName: string;
+  currentUserRole: string; // <-- NEW PROP
 }
 
 const ChatComponent: React.FC<ChatProps> = ({
   chatRoomId,
   currentUserId,
   currentUserName,
+  currentUserRole, // <-- DESTRUCTURE NEW PROP
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. CHAT ROOM INITIALIZATION & REAL-TIME LISTENER (No change needed here)
+  // 1. CHAT ROOM INITIALIZATION & REAL-TIME LISTENER
   useEffect(() => {
     setIsLoading(true);
 
     const messagesRef = collection(db, "chats", chatRoomId, "messages");
     const messagesQuery = query(messagesRef, orderBy("timestamp", "asc"));
 
-    // Set up real-time message listener
     const unsubscribe = onSnapshot(
       messagesQuery,
       (snapshot) => {
@@ -93,14 +113,14 @@ const ChatComponent: React.FC<ChatProps> = ({
     return () => unsubscribe();
   }, [chatRoomId]);
 
-  // 2. Auto-scroll (No change needed here)
+  // 2. Auto-scroll
   useEffect(() => {
     if (!isLoading) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isLoading]);
 
-  // 3. SEND MESSAGE HANDLER (CRITICAL CHANGE)
+  // 3. SEND MESSAGE HANDLER (Chat Creation Logic)
   const sendMessage = useCallback(async () => {
     if (inputMessage.trim() === "") return;
 
@@ -108,16 +128,21 @@ const ChatComponent: React.FC<ChatProps> = ({
       const chatRef = doc(db, "chats", chatRoomId);
       const chatSnap = await getDoc(chatRef);
 
+      // FIX: If chat document doesn't exist, create it FIRST.
       if (!chatSnap.exists()) {
-        const [id1, id2] = chatRoomId.split("--");
+        const memberIds = chatRoomId.split("--");
+        if (memberIds.length !== 2) {
+          throw new Error("Invalid chatRoomId format.");
+        }
+        const [id1, id2] = memberIds;
 
-        // 💡 NEW LOGIC: Determine the roles of the two members
-        const role1 = MOCK_USER_DATABASE[id1]?.role || "unknown";
-        const role2 = MOCK_USER_DATABASE[id2]?.role || "unknown";
+        // Determine the two users' roles using the updated helper
+        const role1 = getUserRole(id1, currentUserId, currentUserRole);
+        const role2 = getUserRole(id2, currentUserId, currentUserRole);
 
         let chatType = "direct";
 
-        // 💡 Determine chat type for Admin oversight
+        // Logic to determine 'support' chat (Student <-> Admin/Faculty)
         const isFacultyOrAdmin = (role: string) =>
           role === "admin" || role === "faculty";
         const isStudent = (role: string) => role === "student";
@@ -126,17 +151,16 @@ const ChatComponent: React.FC<ChatProps> = ({
           (isFacultyOrAdmin(role1) && isStudent(role2)) ||
           (isStudent(role1) && isFacultyOrAdmin(role2))
         ) {
-          chatType = "support"; // Use a consistent type like 'support' or 'admin-student'
+          chatType = "support";
         }
 
-        // Initialize the chat room metadata
+        // Initialize the chat room document (required by security rules for create)
         await setDoc(chatRef, {
           createdAt: serverTimestamp(),
           members: {
             [id1]: true,
             [id2]: true,
           },
-          // 🔑 IMPORTANT: Add the chatType field for global Admin query
           chatType: chatType,
         });
       }
@@ -154,7 +178,13 @@ const ChatComponent: React.FC<ChatProps> = ({
     } catch (error) {
       console.error("Error sending message:", error);
     }
-  }, [inputMessage, currentUserId, currentUserName, chatRoomId]);
+  }, [
+    inputMessage,
+    currentUserId,
+    currentUserName,
+    chatRoomId,
+    currentUserRole,
+  ]); // <-- ADDED currentUserRole dependency
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -170,7 +200,7 @@ const ChatComponent: React.FC<ChatProps> = ({
     );
   }
 
-  // 4. Render JSX (No changes needed here)
+  // 4. Render JSX
   return (
     <div className="flex flex-col h-full border rounded-lg shadow-xl bg-white dark:bg-gray-800 max-w-full mx-auto">
       {/* Message Display Area */}
