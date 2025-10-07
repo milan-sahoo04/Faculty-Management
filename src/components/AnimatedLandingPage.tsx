@@ -5,8 +5,8 @@ import {
   motion,
   AnimatePresence,
   useInView,
-  animate, // 💡 FIX: Import the standalone animate function
-  Variants, // Import Variants type for better type safety
+  animate,
+  Variants,
 } from "framer-motion";
 import {
   GraduationCap,
@@ -23,8 +23,9 @@ import {
   Zap,
   BarChart,
   FileText,
-  Heart, // New icon for Satisfaction Rate
-  // 🛑 REMOVED: Trophy, // Unused import
+  Heart,
+  ChevronUp, // New icon for 'Back to Top'
+  ChevronDown, // New icon for 'Scroll Down' in Hero
 } from "lucide-react";
 import LoginPage from "../pages/LoginPage";
 import landingPhoto from "../assets/landingphoto.png"; // Ensure this path is correct
@@ -47,7 +48,6 @@ const QuickStats: React.FC = () => {
       icon: Users,
       color: "text-blue-600",
       endValue: 2500,
-      // Format to round to nearest 10 and append "+"
       format: (val: number) => Math.round(val / 10) * 10 + "+",
     },
     {
@@ -56,7 +56,6 @@ const QuickStats: React.FC = () => {
       icon: BookOpen,
       color: "text-teal-600",
       endValue: 15000,
-      // Format to round to nearest 100, use locale string, and append "+"
       format: (val: number) =>
         (Math.round(val / 100) * 100).toLocaleString() + "+",
     },
@@ -66,13 +65,11 @@ const QuickStats: React.FC = () => {
       icon: Heart,
       color: "text-red-600",
       endValue: 98,
-      // Format to round to nearest integer and append "%"
       format: (val: number) => Math.round(val) + "%",
     },
   ];
 
   const ref = useRef(null);
-  // useInView hook triggers when the component scrolls into view
   const isInView = useInView(ref, { once: true, amount: 0.5 });
 
   const Counter: React.FC<{ stat: StatItem }> = ({ stat }) => {
@@ -86,7 +83,6 @@ const QuickStats: React.FC = () => {
           duration: 2,
         };
 
-        // Use the standalone 'animate' function from framer-motion
         const animation = animate(controls.start, controls.end, {
           duration: controls.duration,
           onUpdate: (latest) => {
@@ -102,7 +98,6 @@ const QuickStats: React.FC = () => {
       <motion.div
         className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-800"
         initial={{ opacity: 0, y: 20 }}
-        // Animate only when in view
         animate={isInView ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
@@ -112,16 +107,17 @@ const QuickStats: React.FC = () => {
   };
 
   return (
-    // Outer container for the stats section
     <div className="bg-white py-16 md:py-24 shadow-inner-top" ref={ref}>
       <div className="max-w-screen-xl mx-auto px-6 md:px-12">
         <motion.h2
-          className="text-3xl font-bold text-center text-gray-800 mb-12"
+          className="text-3xl font-bold text-center mb-12"
           initial={{ opacity: 0, y: -20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
         >
-          Our Impact at a Glance
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-teal-500">
+            Our Impact at a Glance
+          </span>
         </motion.h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {stats.map((stat, index) => (
@@ -143,7 +139,6 @@ const QuickStats: React.FC = () => {
               }}
             >
               <div
-                // Dynamically sets the background color (e.g., bg-blue-100) based on the text color (e.g., text-blue-600)
                 className={`p-4 rounded-full bg-opacity-10 ${stat.color.replace(
                   "text",
                   "bg"
@@ -162,19 +157,174 @@ const QuickStats: React.FC = () => {
 };
 // --- End QuickStats Component ---
 
+// --- AboutUs Section ---
+const AboutUsSection: React.FC = () => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, amount: 0.5 });
+
+  const featureVariants: Variants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0 },
+  };
+
+  const features = [
+    {
+      icon: BookOpen,
+      title: "Comprehensive Curriculum Management",
+      description:
+        "Easily plan, organize, and update course materials and syllabi in a centralized location.",
+    },
+    {
+      icon: Users,
+      title: "Enhanced Student Engagement",
+      description:
+        "Foster a collaborative learning environment with forums, announcements, and integrated communication tools.",
+    },
+    {
+      icon: BarChart,
+      title: "Robust Performance Analytics",
+      description:
+        "Track student and faculty progress with detailed, insightful reports and visual dashboards.",
+    },
+    {
+      icon: Zap,
+      title: "Seamless Administrative Workflow",
+      description:
+        "Automate routine tasks like grading, attendance, and reporting to save valuable time.",
+    },
+  ];
+
+  return (
+    <section id="about" className="bg-blue-50 py-16 md:py-24" ref={ref}>
+      <div className="max-w-screen-xl mx-auto px-6 md:px-12">
+        <motion.h2
+          className="text-4xl md:text-5xl font-extrabold text-center mb-6"
+          initial={{ opacity: 0, y: -30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8 }}
+        >
+          About <span className="text-blue-600">Faculty Portal</span>
+        </motion.h2>
+        <motion.p
+          className="text-xl text-gray-600 text-center max-w-3xl mx-auto mb-16"
+          initial={{ opacity: 0, y: -20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, delay: 0.2 }}
+        >
+          We are committed to building the future of higher education by
+          providing an intuitive and powerful platform for academic excellence.
+        </motion.p>
+
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+          initial="hidden"
+          animate={isInView ? "visible" : "hidden"}
+          variants={{
+            visible: { transition: { staggerChildren: 0.15 } },
+          }}
+        >
+          {features.map((feature, index) => (
+            <motion.div
+              key={index}
+              className="bg-white p-8 rounded-xl shadow-2xl border-t-4 border-teal-500 hover:shadow-blue-300/50 transition-shadow duration-300 transform hover:scale-[1.02]"
+              variants={featureVariants}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              whileHover={{
+                boxShadow:
+                  "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+              }}
+            >
+              <feature.icon className="w-10 h-10 text-teal-600 mb-4" />
+              <h3 className="text-xl font-bold text-gray-800 mb-3">
+                {feature.title}
+              </h3>
+              <p className="text-gray-600 text-sm">{feature.description}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
+// --- LocationMap Section ---
+const LocationMap: React.FC = () => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, amount: 0.5 });
+  // Placeholder Google Maps Embed URL for a university (e.g., Stanford University)
+  const mapUrl =
+    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3167.3147817454254!2d-122.1748286846985!3d37.42747427982269!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x808fbb2c552554e9%3A0x628e9b6a71e89b25!2sStanford%20University!5e0!3m2!1sen!2sin!4v1633512000000!5m2!1sen!2sin";
+
+  return (
+    <section id="map" className="bg-white py-16 md:py-24" ref={ref}>
+      <div className="max-w-screen-xl mx-auto px-6 md:px-12">
+        <motion.h2
+          className="text-4xl md:text-5xl font-extrabold text-center text-gray-800 mb-6"
+          initial={{ opacity: 0, y: -30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8 }}
+        >
+          Our <span className="text-blue-600">Campus Location</span>
+        </motion.h2>
+        <motion.p
+          className="text-xl text-gray-600 text-center max-w-3xl mx-auto mb-12"
+          initial={{ opacity: 0, y: -20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, delay: 0.2 }}
+        >
+          Visit us at our main campus to experience our vibrant academic
+          community first-hand.
+        </motion.p>
+        <motion.div
+          className="aspect-video w-full h-96 lg:h-[600px] rounded-2xl shadow-2xl overflow-hidden border-4 border-blue-200"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={isInView ? { opacity: 1, scale: 1 } : {}}
+          transition={{ duration: 1, delay: 0.4 }}
+          whileHover={{
+            scale: 1.01,
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+          }}
+        >
+          <iframe
+            src={mapUrl}
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            allowFullScreen={false}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="Campus Location Map"
+          ></iframe>
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+// --- End LocationMap Section ---
+
 const AnimatedLandingPage: React.FC = () => {
   const [showLogin, setShowLogin] = useState(false);
+  const [showContent, setShowContent] = useState(false); // New state for content toggle
 
-  // Simplified handleLogin to only close the modal.
+  // Reference for scrolling to the new content section
+  const contentRef = useRef<HTMLDivElement>(null);
+
   const handleLogin = () => {
     setShowLogin(false);
   };
 
-  // Define floatVariants with Variants type for explicit type safety
+  const handleLearnMore = () => {
+    setShowContent(true);
+    // Smooth scroll to the content after a short delay for animation
+    setTimeout(() => {
+      contentRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 500);
+  };
+
   const floatVariants: Variants = {
     initial: { y: 0, rotate: 0 },
     animate: (i: number) => ({
-      y: [0, -15 - i * 5, 0], // Custom variable 'i' for staggered animation
+      y: [0, -15 - i * 5, 0],
       rotate: [0, 5, -5, 0],
       transition: {
         duration: 8 + i * 2,
@@ -191,7 +341,7 @@ const AnimatedLandingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 relative overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 relative overflow-x-hidden flex flex-col">
       <div className="relative z-10 flex-grow flex flex-col">
         {/* Header */}
         <header className="flex justify-between items-center p-6 md:px-12 md:py-8 w-full max-w-screen-2xl mx-auto">
@@ -242,8 +392,8 @@ const AnimatedLandingPage: React.FC = () => {
           </motion.div>
         </header>
 
-        {/* Hero Section */}
-        <main className="flex-1 flex items-center justify-center p-6 md:p-12">
+        {/* Hero Section (Always visible) */}
+        <main className="flex-1 flex items-center justify-center p-6 md:p-12 min-h-[calc(100vh-100px)]">
           <div className="max-w-screen-2xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
             {/* Left Content */}
             <motion.div
@@ -299,27 +449,34 @@ const AnimatedLandingPage: React.FC = () => {
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </motion.button>
                 <motion.button
-                  className="px-8 py-4 border-2 border-gray-300 text-gray-700 font-medium rounded-xl hover:border-blue-400 hover:text-blue-700 transition-colors shadow-sm"
+                  onClick={handleLearnMore} // Use the new handler
+                  className="px-8 py-4 border-2 border-gray-300 text-gray-700 font-medium rounded-xl hover:border-blue-400 hover:text-blue-700 transition-colors shadow-sm flex items-center space-x-2"
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  Learn More
+                  <span>Learn More</span>
+                  <ChevronDown className="w-5 h-5" />
                 </motion.button>
               </motion.div>
             </motion.div>
 
-            {/* Right Section with Image and Floating Icons */}
+            {/* Right Section with Image and Floating Icons - IMPROVED STRUCTURE */}
             <div className="relative flex justify-center items-center lg:h-[600px] mt-8 lg:mt-0">
-              <motion.img
-                src={landingPhoto}
-                alt="Faculty Portal Dashboard"
-                className="w-full max-w-xl lg:max-w-none rounded-3xl z-10"
+              <motion.div
+                className="w-full max-w-xl lg:max-w-none h-auto lg:h-5/6 relative z-10 rounded-3xl overflow-hidden shadow-2xl shadow-blue-300/50 border-4 border-white/50 cursor-pointer"
                 initial={{ opacity: 0, y: 50, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 1, delay: 0.6, ease: "easeOut" }}
-              />
+                whileHover={{ opacity: 0.95 }}
+              >
+                <img
+                  src={landingPhoto}
+                  alt="Faculty Portal Dashboard"
+                  className="w-full h-full object-cover" // object-cover ensures aspect ratio is maintained
+                />
+              </motion.div>
 
-              {/* Floating Icons around the image */}
+              {/* Floating Icons around the image (unchanged) */}
               <motion.div
                 className="absolute -top-10 left-1/4 transform -translate-x-1/2"
                 variants={floatVariants}
@@ -375,11 +532,59 @@ const AnimatedLandingPage: React.FC = () => {
         </main>
       </div>
 
-      {/* QUICK STATS SECTION */}
-      <QuickStats />
-      {/* ------------------- */}
+      {/* Scroll Indicator */}
+      {!showContent && (
+        <motion.div
+          className="absolute bottom-20 left-1/2 transform -translate-x-1/2 cursor-pointer p-3 rounded-full bg-blue-600/10 text-blue-600 animate-bounce"
+          onClick={handleLearnMore}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 2 }}
+        >
+          <ChevronDown className="w-6 h-6" />
+        </motion.div>
+      )}
 
-      {/* Login Modal */}
+      {/* CONDITIONAL CONTENT SECTIONS */}
+      <AnimatePresence>
+        {showContent && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            transition={{ duration: 0.8 }}
+            className="flex-shrink-0"
+            ref={contentRef} // Reference for scrolling
+          >
+            {/* About Us */}
+            <AboutUsSection />
+            <hr className="border-gray-200" />
+
+            {/* Quick Stats */}
+            <QuickStats />
+            <hr className="border-gray-200" />
+
+            {/* Location Map */}
+            <LocationMap />
+            <hr className="border-gray-200" />
+
+            {/* Back to Top Button */}
+            <div className="text-center py-10 bg-white">
+              <motion.button
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                className="px-8 py-3 bg-teal-500 text-white font-medium rounded-full hover:bg-teal-600 transition-colors flex items-center space-x-2 mx-auto shadow-lg"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <ChevronUp className="w-5 h-5" />
+                <span>Back to Top</span>
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Login Modal (unchanged) */}
       <AnimatePresence>
         {showLogin && (
           <motion.div
@@ -403,7 +608,6 @@ const AnimatedLandingPage: React.FC = () => {
               >
                 <X className="w-5 h-5 text-gray-600" />
               </button>
-              {/* NOTE: LoginPage internally handles the login logic, and AuthContext handles the state change that triggers the redirect in App.tsx */}
               <LoginPage onLogin={handleLogin} />
             </motion.div>
           </motion.div>
@@ -415,7 +619,7 @@ const AnimatedLandingPage: React.FC = () => {
   );
 };
 
-// Modernized Footer Component (No changes)
+// Modernized Footer Component (No functional changes, added a small style detail)
 const Footer: React.FC = () => {
   return (
     <footer className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white py-12">
@@ -463,7 +667,7 @@ const Footer: React.FC = () => {
           <ul className="space-y-3 text-sm">
             <li>
               <a
-                href="#"
+                href="#about"
                 className="text-blue-100 hover:text-white transition-colors"
               >
                 About Us

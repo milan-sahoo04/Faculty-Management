@@ -12,10 +12,10 @@ import {
   Download,
   X,
   Trash2,
-  Share2, // For the new Share button
-  Mail, // For Email share
-  MessageCircle, // For WhatsApp share
-  Copy, // For Copy Link
+  Share2,
+  Mail,
+  MessageCircle,
+  Copy,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -102,8 +102,9 @@ const allCourses = ["All Courses", "CS 301", "EE 205", "ME 410"];
 
 // --- Utility: Get Share Text (Placeholder/Example) ---
 const getShareContent = (events: AcademicEvent[]) => {
+  const todayString = new Date().toISOString().split("T")[0];
   const upcomingEvents = events
-    .filter((e) => e.date >= new Date().toISOString().split("T")[0])
+    .filter((e) => e.date >= todayString)
     .slice(0, 5);
 
   let text = "📅 Faculty Scheduler - Upcoming Tasks:\n\n";
@@ -182,6 +183,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       courseId: courseId === "All Courses" ? null : courseId,
       color,
     });
+    onClose(); // Close on successful save
   };
 
   if (!isOpen) return null;
@@ -201,7 +203,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* ... (Modal Form UI) ... */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Title
@@ -312,7 +313,6 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm">
-        {/* ... (Modal Header & Details UI) ... */}
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-2xl font-bold text-gray-900">{event.title}</h3>
           <button
@@ -470,8 +470,8 @@ const ShareDropdown: React.FC<ShareDropdownProps> = ({ events }) => {
 };
 
 // --- Main Calendar Page Component ---
-const CalendarPage: React.FC = () => {
-  const [view, setView] = useState<"month" | "week" | "day">("month"); // Explicit type for clarity
+export const CalendarPage: React.FC = () => {
+  const [view, setView] = useState<"month" | "week" | "day">("month");
   const [currentDate, setCurrentDate] = useState(new Date("2025-09-01"));
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [selectedCourse, setSelectedCourse] = useState("All Courses");
@@ -487,7 +487,7 @@ const CalendarPage: React.FC = () => {
     null
   );
 
-  // --- Core Calendar Logic (Unchanged) ---
+  // --- Core Calendar Logic ---
   const currentMonthYear = new Intl.DateTimeFormat("en-US", {
     month: "long",
     year: "numeric",
@@ -852,7 +852,6 @@ const CalendarPage: React.FC = () => {
               </div>
             </div>
           )}
-
           {/* No Events Placeholder */}
           {view === "month" && filteredEvents.length === 0 && (
             <div className="text-center text-gray-500 mt-4 p-12 border-t border-dashed">
@@ -866,7 +865,6 @@ const CalendarPage: React.FC = () => {
               </p>
             </div>
           )}
-
           {/* Week/Day View Placeholder */}
           {(view === "week" || view === "day") && (
             <div className="text-center text-xl font-semibold text-gray-700 min-h-[500px] flex flex-col items-center justify-center bg-gray-50 rounded-lg">
@@ -880,7 +878,6 @@ const CalendarPage: React.FC = () => {
             </div>
           )}
         </div>
-
         {/* Right Sidebar: Next Task Widget (Sticky) */}
         <div className="lg:w-1/4">
           <div className="bg-indigo-700 text-white rounded-xl shadow-xl p-5 sticky lg:top-8">
@@ -900,18 +897,27 @@ const CalendarPage: React.FC = () => {
                 <div className="pt-3 border-t border-indigo-500">
                   <p className="text-sm font-bold text-yellow-300">Due Date:</p>
                   <p className="text-xl font-bold">
-                    {new Date(nextTask.date).toLocaleDateString("en-IN", {
+                    {new Date(nextTask.date).toLocaleDateString("en-US", {
                       day: "numeric",
                       month: "short",
                       year: "numeric",
                     })}
                   </p>
                 </div>
+                <button
+                  onClick={() => handleEventClick(nextTask)}
+                  className="w-full text-center mt-4 px-3 py-2 bg-indigo-500 text-white rounded-lg text-sm font-medium hover:bg-indigo-600 transition"
+                >
+                  View Details
+                </button>
               </div>
             ) : (
-              <p className="text-sm opacity-80">
-                No critical deadlines found in the near future.
-              </p>
+              <div className="text-sm opacity-90 p-4 bg-indigo-600 rounded-lg">
+                <p className="font-semibold mb-1">Schedule Clear! 🎉</p>
+                <p>
+                  No upcoming tasks or deadlines found on your filtered list.
+                </p>
+              </div>
             )}
           </div>
         </div>

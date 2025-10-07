@@ -1,5 +1,4 @@
 // src/components/DashboardLayout.tsx
-
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
@@ -20,6 +19,7 @@ import {
   Moon,
   Sun,
   Zap,
+  MessageSquare, // 💡 NEW: Icon for the chat button
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "./ThemeContext";
@@ -27,6 +27,10 @@ import { useAuth } from "./AuthContext";
 
 // 💡 FIX 1: Import the default image to ensure correct bundling
 import defaultUserPhoto from "../assets/milan.png";
+
+// 💡 NEW: Import the ChatComponent you created earlier
+// IMPORTANT: Ensure this path is correct relative to DashboardLayout.tsx
+import ChatComponent from "./ChatComponent";
 
 // --- Types ---
 interface NavItem {
@@ -45,30 +49,31 @@ interface MockFaculty {
 }
 
 // --- MOCK DATA: Simulate your Faculty Database/API Call ---
+// NOTE: Use mock IDs that clearly indicate the faculty member
 const mockFacultyData: MockFaculty[] = [
   {
-    id: "milan-sharma",
+    id: "faculty-milan", // Changed for clarity
     name: "Dr. Milan Sharma",
     role: "Assoc. Professor",
     department: "Computer Science",
     email: "milan.sharma@uni.edu",
   },
   {
-    id: "anya-smith",
+    id: "faculty-anya", // Changed for clarity
     name: "Dr. Anya Smith",
     role: "Professor",
     department: "Physics",
     email: "anya.smith@uni.edu",
   },
   {
-    id: "john-doe",
+    id: "faculty-john", // Changed for clarity
     name: "Prof. John Doe",
     role: "Lecturer",
     department: "Mathematics",
     email: "john.doe@uni.edu",
   },
   {
-    id: "jane-wilson",
+    id: "faculty-jane", // Changed for clarity
     name: "Dr. Jane Wilson",
     role: "Assoc. Professor",
     department: "Biology",
@@ -77,9 +82,14 @@ const mockFacultyData: MockFaculty[] = [
 ];
 
 // ---------------------------------------------
-// --- FacultySearch Component (DEFINED HERE) ---
+// --- FacultySearch Component (UPDATED) ---
 // ---------------------------------------------
-const FacultySearch: React.FC = () => {
+
+interface FacultySearchProps {
+  onChatSelect: (facultyId: string, facultyName: string) => void;
+}
+
+const FacultySearch: React.FC<FacultySearchProps> = ({ onChatSelect }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [resultsOpen, setResultsOpen] = useState(false);
   const navigate = useNavigate();
@@ -97,11 +107,11 @@ const FacultySearch: React.FC = () => {
     );
   }, [searchTerm]);
 
-  // 2. Handle selection and navigation
+  // 2. Handle selection (Chat button is now available in results)
   const handleSelectFaculty = (facultyId: string) => {
     setSearchTerm("");
     setResultsOpen(false);
-    navigate(`/dashboard/faculty/${facultyId}`);
+    navigate(`/dashboard/faculty/${facultyId}`); // Still allows navigation to profile
   };
 
   // 3. Close results on outside click
@@ -150,19 +160,32 @@ const FacultySearch: React.FC = () => {
             className="absolute mt-1 w-full rounded-lg shadow-xl bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-30 max-h-60 overflow-y-auto"
           >
             {filteredFaculty.map((faculty) => (
-              <motion.button
+              <div
                 key={faculty.id}
-                onClick={() => handleSelectFaculty(faculty.id)}
-                className="w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors flex flex-col items-start"
-                whileHover={{ backgroundColor: "rgba(99, 102, 241, 0.1)" }}
+                className="w-full px-2 py-2 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors"
               >
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  {faculty.name}
-                </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {faculty.role} · {faculty.department}
-                </span>
-              </motion.button>
+                <button
+                  onClick={() => handleSelectFaculty(faculty.id)}
+                  className="flex-1 text-left px-2 py-1 flex flex-col items-start"
+                >
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {faculty.name}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {faculty.role} · {faculty.department}
+                  </span>
+                </button>
+
+                {/* 💡 NEW: Chat Button */}
+                <motion.button
+                  onClick={() => onChatSelect(faculty.id, faculty.name)}
+                  className="p-2 ml-2 rounded-full text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-700 dark:hover:text-white transition-colors"
+                  title={`Start chat with ${faculty.name}`}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <MessageSquare className="h-5 w-5" />
+                </motion.button>
+              </div>
             ))}
           </motion.div>
         )}
@@ -188,16 +211,14 @@ const UserProfileDropdown = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { user, logout, role } = useAuth(); // Read role for display
+  const { user, logout, role } = useAuth();
 
-  // Combined logout and navigation handler
   const handleUserLogout = async () => {
     await logout();
     setDropdownOpen(false);
     navigate("/", { replace: true });
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -246,7 +267,6 @@ const UserProfileDropdown = () => {
         />
       </motion.button>
 
-      {/* Dropdown Menu */}
       <AnimatePresence>
         {dropdownOpen && (
           <motion.div
@@ -302,7 +322,6 @@ const UserProfileDropdown = () => {
 // ---------------------------------------------
 const SidebarContent: React.FC<{ navigation: NavItem[] }> = ({
   navigation,
-  // 🛑 REMOVED: location, // Unused prop that caused a type error
 }) => (
   <div className="flex flex-col flex-grow bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 pt-5 pb-4 overflow-y-auto shadow-xl lg:shadow-none">
     <div className="flex items-center flex-shrink-0 px-4">
@@ -340,6 +359,32 @@ const SidebarContent: React.FC<{ navigation: NavItem[] }> = ({
             )}
           </NavLink>
         ))}
+        {/* NEW: Explicitly add the messages link since it's common */}
+        <NavLink
+          key="Messages"
+          to="/dashboard/messages"
+          className={({ isActive }) =>
+            `group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+              isActive
+                ? "bg-indigo-600 text-white shadow-lg transform translate-x-1"
+                : "text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600"
+            }`
+          }
+        >
+          {({ isActive }) => (
+            <>
+              <MessageSquare
+                className={`mr-3 flex-shrink-0 h-6 w-6 transition-colors duration-200 ${
+                  isActive
+                    ? "text-white"
+                    : "text-gray-400 group-hover:text-indigo-500"
+                }`}
+                aria-hidden="true"
+              />
+              Messages
+            </>
+          )}
+        </NavLink>
       </nav>
       <div className="px-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -356,12 +401,41 @@ const SidebarContent: React.FC<{ navigation: NavItem[] }> = ({
 const DashboardLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showBlast, setShowBlast] = useState(false);
-  // 🛑 REMOVED: location variable is no longer passed to SidebarContent
+
+  // 💡 NEW STATE: For managing the chat feature
+  const [selectedChat, setSelectedChat] = useState<{
+    id: string; // The canonical chatRoomId
+    name: string; // The name of the person you are chatting with
+  } | null>(null);
+
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useTheme();
   const { user, loading, role } = useAuth(); // Read role for filtering
+  const currentUserId = user?.uid; // Get the authenticated user's ID
 
-  // 🚀 MASTER NAVIGATION LIST with Role Definitions
+  // 💡 UTILITY: Function to create a canonical chat room ID
+  const createTwoPartyChatId = (userId1: string, userId2: string) => {
+    // Sort the IDs alphabetically to ensure the ID is the same regardless of who initiates (e.g., "A--B" always)
+    const ids = [userId1, userId2].sort();
+    return `${ids[0]}--${ids[1]}`;
+  };
+
+  // 💡 UPDATED HANDLER: To open the chat sidebar
+  const handleChatSelect = (facultyId: string, facultyName: string) => {
+    if (!currentUserId || !facultyId) return;
+
+    // CRITICAL: Use the canonical ID combining the student's UID and the faculty's ID
+    const chatId = createTwoPartyChatId(currentUserId, facultyId);
+
+    setSelectedChat({ id: chatId, name: facultyName });
+  };
+
+  // 💡 NEW HANDLER: To close the chat sidebar
+  const closeChat = () => {
+    setSelectedChat(null);
+  };
+
+  // 🚀 MASTER NAVIGATION LIST (Unchanged for brevity)
   const allNavigation: NavItem[] = [
     // Links visible to ALL (default requiredRole is 'all')
     { name: "Home", href: "/dashboard/home", icon: Home, requiredRole: "all" },
@@ -423,18 +497,17 @@ const DashboardLayout: React.FC = () => {
       icon: Users,
       requiredRole: "student",
     },
+    // NOTE: Message link is now added explicitly in SidebarContent
   ];
 
-  // 🚀 FILTERED NAVIGATION LOGIC
+  // 🚀 FILTERED NAVIGATION LOGIC (Unchanged for brevity)
   const navigation = useMemo(() => {
-    if (loading || !role) return []; // Hide navigation while loading or if no role is set
+    if (loading || !role) return [];
 
     return allNavigation.filter((item) => {
-      // If role is admin, show everything
       if (role === "admin") {
         return true;
       }
-      // If role is student, only show 'student' or 'all' links
       if (
         role === "student" &&
         (item.requiredRole === "student" || item.requiredRole === "all")
@@ -466,8 +539,8 @@ const DashboardLayout: React.FC = () => {
     }
   }, [loading, user, navigate]);
 
-  // 🚀 LOADING SCREEN: Show a loading indicator while checking auth state
-  if (loading || !user || !role) {
+  // 🚀 LOADING SCREEN
+  if (loading || !user || !role || !currentUserId) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <motion.div
@@ -486,7 +559,7 @@ const DashboardLayout: React.FC = () => {
   // If loading is false, user exists, and role is fetched, render dashboard
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 flex overflow-hidden">
-      {/* Mobile sidebar overlay */}
+      {/* Mobile sidebar overlay (Unchanged for brevity) */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -520,14 +593,14 @@ const DashboardLayout: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar (Unchanged for brevity) */}
       <div className="hidden lg:flex lg:flex-shrink-0">
         <div className="flex flex-col w-64">
           <SidebarContent navigation={navigation} />
         </div>
       </div>
 
-      {/* Main content */}
+      {/* Main content area */}
       <div className="flex-1 overflow-hidden flex flex-col">
         {/* Top navigation */}
         <div className="relative z-20 flex-shrink-0 flex h-16 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
@@ -544,10 +617,10 @@ const DashboardLayout: React.FC = () => {
           </motion.button>
 
           <div className="flex-1 px-4 flex justify-between items-center">
-            {/* 🚀 Feature: Faculty Search Component Integration */}
-            <FacultySearch />
+            {/* 🚀 Feature: Faculty Search Component Integration (Passing handler) */}
+            <FacultySearch onChatSelect={handleChatSelect} />
 
-            {/* Right side icons and profile */}
+            {/* Right side icons and profile (Unchanged for brevity) */}
             <div className="ml-auto flex items-center space-x-2 sm:space-x-4">
               {/* Dark Mode Toggle Button */}
               <motion.button
@@ -580,7 +653,7 @@ const DashboardLayout: React.FC = () => {
           </div>
         </div>
 
-        {/* The "Bomb Blast" Animation Overlay */}
+        {/* The "Bomb Blast" Animation Overlay (Unchanged for brevity) */}
         <AnimatePresence>
           {showBlast && (
             <motion.div
@@ -606,9 +679,51 @@ const DashboardLayout: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Page content */}
-        <main className="flex-1 relative overflow-y-auto focus:outline-none">
-          <Outlet />
+        {/* Page content area with Chat Sidebar */}
+        <main className="flex-1 relative overflow-y-auto focus:outline-none flex">
+          {/* Main Outlet Content */}
+          <div
+            className={`flex-1 overflow-x-hidden transition-all duration-300 ${
+              selectedChat ? "pr-80" : ""
+            }`}
+          >
+            <Outlet />
+          </div>
+
+          {/* 💡 NEW: Sliding Chat Sidebar */}
+          <AnimatePresence>
+            {selectedChat && (
+              <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: "0%" }}
+                exit={{ x: "100%" }}
+                transition={{ duration: 0.3 }}
+                className="fixed right-0 top-0 bottom-0 z-40 w-80 shadow-2xl bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col pt-16" // pt-16 matches header height
+              >
+                <div className="absolute top-0 w-full h-16 bg-white dark:bg-gray-800 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
+                  <h5 className="font-semibold text-gray-900 dark:text-white truncate">
+                    Chat with {selectedChat.name}
+                  </h5>
+                  <motion.button
+                    onClick={closeChat}
+                    className="p-2 rounded-full text-gray-500 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900 transition-colors"
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <X className="h-5 w-5" />
+                  </motion.button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto">
+                  {/* Render the Chat Component here */}
+                  <ChatComponent
+                    chatRoomId={selectedChat.id}
+                    currentUserId={currentUserId} // Use actual Firebase Auth UID
+                    currentUserName={user.displayName || user.email || "User"} // Use authenticated user's name
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </main>
       </div>
     </div>
