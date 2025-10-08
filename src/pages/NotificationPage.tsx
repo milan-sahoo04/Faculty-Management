@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Bell,
   Search,
@@ -13,11 +13,11 @@ import {
   Clock,
   Users,
   X,
-  CheckCircle, // Added X and CheckCircle
+  CheckCircle,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-// --- Data Structures (Same as yours, included for context) ---
+// --- Data Structures ---
 interface User {
   id: string;
   name: string;
@@ -44,7 +44,7 @@ interface Notification {
   senderRole?: string;
 }
 
-// --- Dummy Data (Same as yours, truncated for brevity) ---
+// --- Dummy Data ---
 const users: { [key: string]: User } = {
   alex: { id: "alex", name: "Alex Morgan (Student)", avatar: "AM" },
   david: { id: "david", name: "David Kim (Admin)", avatar: "DK" },
@@ -117,7 +117,7 @@ const initialNotifications: Notification[] = [
   },
 ];
 
-// --- Helper Components (Simplified for brevity, main logic remains) ---
+// --- Helper Components ---
 
 const UserAvatar: React.FC<{ user: User | undefined }> = ({ user }) => {
   const bgColor =
@@ -135,24 +135,44 @@ const UserAvatar: React.FC<{ user: User | undefined }> = ({ user }) => {
   );
 };
 
-const NotificationOptionsDropdown: React.FC<{
-  notif: Notification; // Pass the whole notification for context-aware muting
+interface NotificationOptionsDropdownProps {
+  notif: Notification;
   onMarkAsRead: () => void;
   onMute: (context: string) => void;
   onRemove: () => void;
-}> = ({ notif, onMarkAsRead, onMute, onRemove }) => {
-  const [isOpen, setIsOpen] = useState(false);
+}
 
-  // Determine the context to be muted (Course Name or General Type)
+const NotificationOptionsDropdown: React.FC<
+  NotificationOptionsDropdownProps
+> = ({ notif, onMarkAsRead, onMute, onRemove }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const muteContext = notif.context || notif.type;
 
   return (
-    <div className="relative inline-block text-left z-20">
-      {/* ... Dropdown Toggle Button (Same as before) ... */}
+    <div className="relative inline-block text-left z-20" ref={dropdownRef}>
       <button
         type="button"
         className="flex items-center text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-100 rounded-full p-1"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent list item click
+          setIsOpen(!isOpen);
+        }}
       >
         <MoreHorizontal className="h-5 w-5" />
       </button>
@@ -162,12 +182,13 @@ const NotificationOptionsDropdown: React.FC<{
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+            className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
             tabIndex={-1}
           >
             <div className="py-1">
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   onMarkAsRead();
                   setIsOpen(false);
                 }}
@@ -176,9 +197,9 @@ const NotificationOptionsDropdown: React.FC<{
                 <Mail className="h-5 w-5 mr-2" />{" "}
                 {notif.read ? "Mark as unread" : "Mark as read"}
               </button>
-              {/* NEW: Context-aware Mute */}
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   onMute(muteContext);
                   setIsOpen(false);
                 }}
@@ -188,7 +209,8 @@ const NotificationOptionsDropdown: React.FC<{
                 {muteContext}"
               </button>
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   onRemove();
                   setIsOpen(false);
                 }}
@@ -210,10 +232,8 @@ const NotificationPage: React.FC = () => {
   const [notifications, setNotifications] =
     useState<Notification[]>(initialNotifications);
   const [selectedNotification, setSelectedNotification] =
-    useState<Notification | null>(notifications[1]);
-  const [showUnreadOnly, setShowUnreadOnly] = useState(false); // NEW: Unread filter state
-
-  // NEW: State for muted contexts (Course Names or Types)
+    useState<Notification | null>(null); // Start with null for mobile view
+  const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [mutedContexts, setMutedContexts] = useState<string[]>([]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -222,12 +242,10 @@ const NotificationPage: React.FC = () => {
     .filter((notif) => {
       if (activeTab !== "All" && notif.category !== activeTab) return false;
       if (showUnreadOnly && notif.read) return false;
-
-      // NEW: Filter out notifications whose context or type is muted
       const contextToMatch = notif.context || notif.type;
       return !mutedContexts.includes(contextToMatch);
     })
-    .sort((a, b) => (a.read === b.read ? 0 : a.read ? 1 : -1)); // Keep unread at top
+    .sort((a, b) => (a.read === b.read ? 0 : a.read ? 1 : -1));
 
   const markAsRead = (id: string, forceStatus?: boolean) => {
     setNotifications((prev) =>
@@ -240,7 +258,6 @@ const NotificationPage: React.FC = () => {
     );
   };
 
-  // NEW: Bulk action to mark all filtered notifications as read
   const markAllAsRead = () => {
     setNotifications((prev) =>
       prev.map((notif) =>
@@ -251,7 +268,6 @@ const NotificationPage: React.FC = () => {
     );
   };
 
-  // NEW: Updated mute function to track contexts
   const muteNotificationContext = (context: string) => {
     if (!mutedContexts.includes(context)) {
       setMutedContexts((prev) => [...prev, context]);
@@ -270,7 +286,6 @@ const NotificationPage: React.FC = () => {
   };
 
   const groupNotificationsByTime = (notifs: Notification[]) => {
-    // Simple grouping logic (same as before)
     const groups: { [key: string]: Notification[] } = {
       TODAY: [],
       YESTERDAY: [],
@@ -298,7 +313,7 @@ const NotificationPage: React.FC = () => {
     notif,
   }) => {
     return (
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
         <div className="bg-white rounded-lg shadow-sm p-5 border border-gray-200">
           <div className="flex items-center space-x-2 mb-2 pb-2 border-b">
             <UserAvatar user={notif.user} />
@@ -306,7 +321,6 @@ const NotificationPage: React.FC = () => {
               <p className="font-semibold text-gray-900">
                 {notif.user?.name || "System"}
               </p>
-              {/* NEW: Sender Role/Category Indicator */}
               <span className="text-xs text-gray-500">
                 {notif.senderRole || notif.category}
               </span>
@@ -363,41 +377,60 @@ const NotificationPage: React.FC = () => {
         </div>
 
         {/* Action Buttons (Refined) */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 mt-auto">
+        <div className="flex flex-wrap justify-end gap-3 pt-4 border-t border-gray-200 mt-auto bg-white p-3 rounded-lg shadow-sm">
           {notif.type === "meeting_invite" && (
             <>
-              <button className="flex items-center px-4 py-2 border border-green-300 rounded-md text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100">
+              <button className="flex items-center px-4 py-2 border border-green-300 rounded-md text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 flex-1 sm:flex-initial justify-center">
                 <CheckCircle className="h-4 w-4 mr-2" /> Accept Invite
               </button>
-              <button className="flex items-center px-4 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100">
+              <button className="flex items-center px-4 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 flex-1 sm:flex-initial justify-center">
                 <X className="h-4 w-4 mr-2" /> Decline
               </button>
             </>
           )}
           {notif.type === "new_submission" && (
-            <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">
+            <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 flex-1 sm:flex-initial justify-center">
               <FileText className="h-4 w-4 mr-2" /> Go to Grading (
               {notif.context})
             </button>
           )}
           {notif.type === "admin_announcement" && (
-            <button className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700">
+            <button className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 flex-1 sm:flex-initial justify-center">
               <Reply className="h-4 w-4 mr-2" /> View Full Announcement
             </button>
           )}
         </div>
+        {/* Mobile: Back button for details view */}
+        <button
+          onClick={() => setSelectedNotification(null)}
+          className="lg:hidden fixed bottom-4 right-4 z-40 p-3 bg-blue-600 text-white rounded-full shadow-lg flex items-center"
+          aria-label="Back to Alerts"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
     );
   };
   // --- End of REFINED Helper Component ---
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-gray-100">
+    <div className="flex h-screen overflow-hidden bg-gray-100">
+      {/* Responsive Layout Control:
+        - Mobile: The Notification List takes the full screen (w-full).
+        - LG Screen: The Notification List takes 2/5 width.
+        - When a notification is selected on mobile, the List is hidden and Details is shown.
+      */}
+
       {/* Left Panel: Notification List */}
-      <div className="flex flex-col w-full lg:w-2/5 border-r border-gray-200 bg-white shadow-lg overflow-hidden">
+      <div
+        className={`flex-col w-full border-r border-gray-200 bg-white shadow-lg overflow-hidden transition-transform duration-300 ease-in-out 
+          ${selectedNotification && "hidden lg:flex"} 
+          ${!selectedNotification && "flex lg:w-2/5"}
+        `}
+      >
         {/* Header and Bulk Actions */}
-        <div className="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center mb-2 sm:mb-0">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center mb-2 sm:mb-0">
             <Bell className="h-6 w-6 mr-2 text-blue-600" />
             Alerts
             {unreadCount > 0 && (
@@ -406,7 +439,7 @@ const NotificationPage: React.FC = () => {
               </span>
             )}
           </h2>
-          {/* NEW: Bulk Action Button */}
+          {/* Bulk Action Button */}
           {unreadCount > 0 && (
             <button
               className="flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
@@ -418,13 +451,13 @@ const NotificationPage: React.FC = () => {
         </div>
 
         {/* Tabs & Quick Filter */}
-        <div className="flex flex-wrap border-b border-gray-200 bg-gray-50">
+        <div className="flex overflow-x-auto whitespace-nowrap border-b border-gray-200 bg-gray-50">
           {(
             ["All", "Classes", "Meetings", "Submissions", "Admin"] as const
           ).map((tab) => (
             <button
               key={tab}
-              className={`flex-1 py-3 text-sm font-medium transition-colors relative ${
+              className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors relative ${
                 activeTab === tab
                   ? "text-blue-600 bg-white"
                   : "text-gray-600 hover:bg-gray-100"
@@ -440,9 +473,9 @@ const NotificationPage: React.FC = () => {
               )}
             </button>
           ))}
-          {/* NEW: Unread Quick Filter */}
+          {/* Unread Quick Filter (Fixed width to avoid layout shift) */}
           <button
-            className={`py-3 px-4 text-xs font-medium transition-colors relative border-l border-gray-200 ${
+            className={`flex-shrink-0 py-3 px-4 text-xs font-medium transition-colors relative border-l border-gray-200 ${
               showUnreadOnly
                 ? "text-red-600 bg-red-50"
                 : "text-gray-600 hover:bg-gray-100"
@@ -454,7 +487,7 @@ const NotificationPage: React.FC = () => {
                 showUnreadOnly ? "text-red-500" : "text-gray-400"
               }`}
             />
-            Unread
+            <span className="pl-4">Unread</span>
           </button>
         </div>
 
@@ -503,7 +536,7 @@ const NotificationPage: React.FC = () => {
                         }}
                       >
                         <UserAvatar user={notif.user} />
-                        <div className="flex-1 ml-3 mr-2">
+                        <div className="flex-1 ml-3 mr-2 min-w-0">
                           <p
                             className="text-sm line-clamp-2"
                             dangerouslySetInnerHTML={{ __html: notif.message }}
@@ -518,7 +551,7 @@ const NotificationPage: React.FC = () => {
                         <NotificationOptionsDropdown
                           notif={notif}
                           onMarkAsRead={() => markAsRead(notif.id)}
-                          onMute={muteNotificationContext} // Using the new context-aware mute
+                          onMute={muteNotificationContext}
                           onRemove={() => removeNotification(notif.id)}
                         />
                       </motion.div>
@@ -536,16 +569,27 @@ const NotificationPage: React.FC = () => {
       </div>
 
       {/* Right Panel: Notification Details */}
-      <div className="flex-1 flex flex-col w-full lg:w-3/5 bg-gray-50 overflow-hidden">
+      <div
+        className={`flex-col w-full bg-gray-50 overflow-hidden transition-transform duration-300 ease-in-out
+          ${selectedNotification ? "flex lg:w-3/5" : "hidden"}
+        `}
+      >
         {selectedNotification ? (
           <>
-            {/* Details Header */}
-            <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center justify-between shadow-sm">
-              <h3 className="text-lg font-bold text-gray-900">
+            {/* Details Header (Mobile back button added) */}
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-white flex items-center justify-between shadow-sm">
+              <button
+                onClick={() => setSelectedNotification(null)}
+                className="lg:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-full mr-3"
+                aria-label="Back to Alerts"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <h3 className="text-lg font-bold text-gray-900 flex-1">
                 Contextual Details
               </h3>
               <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 hidden sm:block">
                   {selectedNotification.timestamp}
                 </span>
                 <NotificationOptionsDropdown

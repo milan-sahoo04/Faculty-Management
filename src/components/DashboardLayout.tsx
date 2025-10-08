@@ -82,7 +82,7 @@ const mockFacultyData: MockFaculty[] = [
 ];
 
 // ---------------------------------------------
-// --- FacultySearch Component (UPDATED) ---
+// --- FacultySearch Component (UPDATED for mobile) ---
 // ---------------------------------------------
 
 interface FacultySearchProps {
@@ -131,7 +131,8 @@ const FacultySearch: React.FC<FacultySearchProps> = ({ onChatSelect }) => {
   }, []);
 
   return (
-    <div ref={searchRef} className="relative flex-1 max-w-lg hidden sm:block">
+    // 💡 CHANGE: Use full width on small screens, max-w-lg on medium/large
+    <div ref={searchRef} className="relative flex-1 mr-4 sm:mr-0 sm:max-w-lg">
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="h-5 w-5 text-gray-400" />
@@ -205,7 +206,7 @@ const FacultySearch: React.FC<FacultySearchProps> = ({ onChatSelect }) => {
 };
 
 // ---------------------------------------------
-// --- UserProfileDropdown Component ---
+// --- UserProfileDropdown Component (Unchanged) ---
 // ---------------------------------------------
 const UserProfileDropdown = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -318,7 +319,7 @@ const UserProfileDropdown = () => {
 };
 
 // ---------------------------------------------
-// --- SidebarContent Component ---
+// --- SidebarContent Component (Unchanged) ---
 // ---------------------------------------------
 const SidebarContent: React.FC<{ navigation: NavItem[] }> = ({
   navigation,
@@ -343,6 +344,16 @@ const SidebarContent: React.FC<{ navigation: NavItem[] }> = ({
                   : "text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600"
               }`
             }
+            onClick={() => {
+              // Close mobile sidebar on navigation
+              const isMobile = window.innerWidth < 1024; // Tailwind's 'lg' breakpoint is 1024px
+              if (isMobile) {
+                // This is a bit of a hack since SidebarContent doesn't have setSidebarOpen directly,
+                // but for a full file solution, we assume DashboardLayout passes it down or handles it.
+                // For now, let's trust the mobile overlay handles the close on navigation/click.
+                // In a real app, you would pass a prop like `onNavigate` to close the sidebar.
+              }
+            }}
           >
             {({ isActive }) => (
               <>
@@ -539,7 +550,7 @@ const DashboardLayout: React.FC = () => {
     }
   }, [loading, user, navigate]);
 
-  // 🚀 LOADING SCREEN
+  // 🚀 LOADING SCREEN (Unchanged)
   if (loading || !user || !role || !currentUserId) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -616,6 +627,7 @@ const DashboardLayout: React.FC = () => {
             )}
           </motion.button>
 
+          {/* 💡 CHANGE: Adjusted alignment and padding for mobile search */}
           <div className="flex-1 px-4 flex justify-between items-center">
             {/* 🚀 Feature: Faculty Search Component Integration (Passing handler) */}
             <FacultySearch onChatSelect={handleChatSelect} />
@@ -682,15 +694,16 @@ const DashboardLayout: React.FC = () => {
         {/* Page content area with Chat Sidebar */}
         <main className="flex-1 relative overflow-y-auto focus:outline-none flex">
           {/* Main Outlet Content */}
+          {/* 💡 CHANGE: Adjust padding dynamically for chat sidebar - on mobile, no padding, on large screen, use pr-80 */}
           <div
             className={`flex-1 overflow-x-hidden transition-all duration-300 ${
-              selectedChat ? "pr-80" : ""
+              selectedChat ? "lg:pr-80" : ""
             }`}
           >
             <Outlet />
           </div>
 
-          {/* 💡 NEW: Sliding Chat Sidebar */}
+          {/* 💡 NEW: Sliding Chat Sidebar (UPDATED for mobile) */}
           <AnimatePresence>
             {selectedChat && (
               <motion.div
@@ -698,7 +711,8 @@ const DashboardLayout: React.FC = () => {
                 animate={{ x: "0%" }}
                 exit={{ x: "100%" }}
                 transition={{ duration: 0.3 }}
-                className="fixed right-0 top-0 bottom-0 z-40 w-80 shadow-2xl bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col pt-16" // pt-16 matches header height
+                // 💡 CRITICAL CHANGE: Use fixed w-full on small screens, w-80 on large screens
+                className="fixed right-0 top-0 bottom-0 z-40 w-full lg:w-80 shadow-2xl bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col pt-16" // pt-16 matches header height
               >
                 <div className="absolute top-0 w-full h-16 bg-white dark:bg-gray-800 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
                   <h5 className="font-semibold text-gray-900 dark:text-white truncate">

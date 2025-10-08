@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import ChatComponent from "../components/ChatComponent";
 import { useAuth } from "../components/AuthContext";
-import { Mail, MessageSquare, User, Search } from "lucide-react";
+import { Mail, MessageSquare, User, Search, ArrowLeft } from "lucide-react"; // Imported ArrowLeft for back button
 import { db } from "../firebase/firebaseConfig";
 import {
   collection,
@@ -136,7 +136,7 @@ const FacultySearchPanel: React.FC<FacultySearchPanelProps> = ({
 };
 
 // -------------------------------------------------------------
-// MessagePage Component (Updated to pass role)
+// MessagePage Component (Updated for mobile responsiveness)
 // -------------------------------------------------------------
 const MessagePage: React.FC = () => {
   const { user, loading, role } = useAuth();
@@ -148,9 +148,18 @@ const MessagePage: React.FC = () => {
   // Get a display name for the new user, defaulting to 'User'
   const currentUserName = user?.displayName || user?.email || "User";
 
+  // State for mobile view: true when a chat is selected, showing the right panel.
+  const [isMobileView, setIsMobileView] = useState(false);
+
   // Handler to set the selected chat, used by both the list and the search panel
   const handleSelectChat = (chat: ChatListItem) => {
     setSelectedChat(chat);
+    setIsMobileView(true); // Switch to chat window view on mobile
+  };
+
+  const handleBackToChatList = () => {
+    setIsMobileView(false);
+    // setSelectedChat(null); // Optional: clear selection, but often better to keep it selected
   };
 
   // 1. Fetch Chat List: Conditional query based on role.
@@ -244,9 +253,13 @@ const MessagePage: React.FC = () => {
 
   // 2. Render UI
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-gray-50 dark:bg-gray-900 overflow-hidden">
-      {/* ⬅️ Chat List Sidebar (Left Panel) */}
-      <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col flex-shrink-0">
+    <div className="flex h-[calc(100vh-64px)] bg-gray-50 dark:bg-gray-900 overflow-hidden relative">
+      {/* ⬅️ Chat List Sidebar (Left Panel) - Full width on mobile, w-80 on medium screens and up */}
+      <div
+        className={`absolute inset-0 md:relative md:w-80 md:flex flex-col flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-transform duration-300 ease-in-out
+          ${isMobileView ? "translate-x-[-100%]" : "translate-x-0"}
+          md:translate-x-0 w-full`} // Conditional visibility and full width on mobile
+      >
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center">
           <Mail size={24} className="text-indigo-600 mr-2" />
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
@@ -300,16 +313,32 @@ const MessagePage: React.FC = () => {
         )}
       </div>
 
-      {/* ➡️ Chat Window (Right Panel) */}
-      <div className="flex-1 flex flex-col p-4 overflow-hidden">
+      {/* ➡️ Chat Window (Right Panel) - Full screen on mobile, fills remaining space on medium and up */}
+      <div
+        className={`absolute inset-0 md:relative flex-1 flex flex-col p-4 overflow-hidden transition-transform duration-300 ease-in-out
+          ${isMobileView ? "translate-x-0" : "translate-x-[100%]"}
+          md:translate-x-0`} // Conditional visibility on mobile
+      >
         {selectedChat ? (
           <div className="flex-1 flex flex-col">
-            <div className="flex items-center justify-center p-3 mb-4 bg-indigo-100 dark:bg-indigo-800 rounded-lg shadow-md flex-shrink-0">
+            <div className="flex items-center p-3 mb-4 bg-indigo-100 dark:bg-indigo-800 rounded-lg shadow-md flex-shrink-0">
+              {/* Back Button for mobile view */}
+              <button
+                onClick={handleBackToChatList}
+                className="md:hidden mr-2 p-1 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-700"
+                aria-label="Back to chat list"
+              >
+                <ArrowLeft
+                  size={20}
+                  className="text-indigo-600 dark:text-indigo-200"
+                />
+              </button>
+
               <MessageSquare
                 size={20}
-                className="text-indigo-600 dark:text-indigo-200 mr-2"
+                className="text-indigo-600 dark:text-indigo-200 mr-2 hidden md:block" // Hide icon on mobile when back button is present
               />
-              <h3 className="text-lg font-bold text-indigo-800 dark:text-indigo-100">
+              <h3 className="text-lg font-bold text-indigo-800 dark:text-indigo-100 truncate">
                 Conversation with {selectedChat.otherUserName}
               </h3>
             </div>

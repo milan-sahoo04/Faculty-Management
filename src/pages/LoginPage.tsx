@@ -292,11 +292,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
   }, [welcome]);
 
-  /* ---------- UI (No significant changes to the look) ---------- */
+  /* ---------------- UI (Optimized for Mobile) ---------------- */
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 overflow-hidden">
       <div id="recaptcha-container" />
-      <div className="w-full max-w-md relative">
+      {/* 🔑 CHANGE: max-w-sm is better for most mobile screens than max-w-md */}
+      <div className="w-full max-w-sm sm:max-w-md relative">
         <AnimatePresence mode="wait">
           {welcome ? (
             <motion.div
@@ -319,22 +320,22 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: isSignup ? "-100%" : "100%", opacity: 0 }}
               transition={{ duration: 0.6 }}
-              className="bg-white rounded-lg shadow-lg p-8"
+              className="bg-white rounded-lg shadow-lg p-6 sm:p-8" /* Adjusted padding for very small screens */
             >
               {/* Header */}
-              <div className="text-center mb-8">
+              <div className="text-center mb-6 sm:mb-8">
                 <img
                   src={loginIllustration}
                   alt="Login illustration"
-                  className="mx-auto mb-4 w-32 h-32 object-contain"
+                  className="mx-auto mb-4 w-24 h-24 object-contain sm:w-32 sm:h-32" /* Made smaller for mobile, scales up on sm: */
                 />
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-                  <Target className="w-8 h-8 text-white" />
+                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-blue-600 rounded-full mb-4">
+                  <Target className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                   Faculty Management
                 </h1>
-                <p className="text-gray-600 mt-2">
+                <p className="text-gray-600 mt-2 text-sm sm:text-base">
                   {isSignup
                     ? "Create your account (with phone OTP)"
                     : "Sign in to continue"}
@@ -361,7 +362,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="email@example.com"
-                      className="w-full pl-10 pr-4 py-3 border rounded-lg"
+                      className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
                       required
                     />
                   </div>
@@ -381,7 +382,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="At least 6 characters"
                       // Increased right padding to prevent text overlapping the eye icon
-                      className="w-full pl-10 pr-10 py-3 border rounded-lg"
+                      className="w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
                       required
                     />
                     {/* Eye Toggle Button */}
@@ -414,17 +415,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="+919876543210"
-                        className="w-full px-3 py-2 border rounded-lg"
+                        className="w-full px-3 py-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                         required
                       />
                     </div>
 
-                    <div className="flex gap-2">
+                    {/* 🔑 CHANGE: Use flex-col on small screens and flex-row on medium screens and up for button grouping */}
+                    <div className="flex flex-col md:flex-row gap-2">
                       <button
                         type="button"
                         onClick={sendOtpToPhone}
                         disabled={loading || otpSent}
-                        className="flex-1 bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 transition"
+                        className="w-full md:flex-1 bg-indigo-600 text-white px-3 py-3 rounded-lg hover:bg-indigo-700 transition disabled:bg-indigo-400"
                       >
                         {loading
                           ? "Sending..."
@@ -438,14 +440,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                             value={otp}
                             onChange={(e) => setOtp(e.target.value)}
                             placeholder="Enter OTP"
-                            className="w-36 px-3 py-2 border rounded-lg"
+                            className="w-full md:w-auto px-3 py-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                             required
                           />
                           <button
                             type="button"
                             onClick={verifyOtp}
                             disabled={loading}
-                            className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition"
+                            className="w-full md:w-auto bg-green-600 text-white px-3 py-3 rounded-lg hover:bg-green-700 transition disabled:bg-green-400"
                           >
                             {loading ? "Verifying..." : "Verify OTP"}
                           </button>
@@ -462,13 +464,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                       Complete Profile
                     </h3>
 
-                    <div className="relative mb-2">
+                    <div className="relative mb-3">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                       <input
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="Full Name"
-                        className="w-full pl-10 pr-4 py-3 border rounded-lg"
+                        className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
                         required
                       />
                     </div>
@@ -479,7 +481,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                         value={department}
                         onChange={(e) => setDepartment(e.target.value)}
                         placeholder="Department (optional)"
-                        className="w-full pl-10 pr-4 py-3 border rounded-lg"
+                        className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
 
@@ -493,7 +495,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                         onChange={(e) =>
                           setUserType(e.target.value as "student" | "admin")
                         }
-                        className="w-full px-3 py-3 border rounded-lg mb-4 bg-white"
+                        className="w-full px-3 py-3 border rounded-lg mb-4 bg-white focus:ring-blue-500 focus:border-blue-500"
                         required
                       >
                         <option value="student">Student (Standard User)</option>
@@ -505,7 +507,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                       type="button"
                       onClick={finishRegistration}
                       disabled={loading}
-                      className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
+                      className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-blue-400"
                     >
                       {loading ? "Finalizing..." : "Complete Registration"}
                     </button>
@@ -520,7 +522,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-blue-400"
                   >
                     {loading ? "Signing in..." : "Sign In"}
                   </button>
@@ -532,7 +534,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 type="button"
                 onClick={handleGoogleLogin}
                 disabled={loading}
-                className="w-full mt-4 bg-white border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center justify-center space-x-2"
+                className="w-full mt-4 bg-white border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
@@ -558,10 +560,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               </button>
 
               {/* Links */}
-              <div className="mt-6 flex justify-between text-sm">
+              <div className="mt-6 flex flex-col sm:flex-row justify-between text-sm space-y-2 sm:space-y-0">
                 <button
                   onClick={handleForgotPassword}
-                  className="text-blue-600 hover:text-blue-800"
+                  className="text-blue-600 hover:text-blue-800 text-left sm:text-center"
                   type="button"
                 >
                   Forgot password?
@@ -574,7 +576,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     setPhoneVerified(false);
                     setConfirmationResult(null);
                   }}
-                  className="text-blue-600 hover:text-blue-800"
+                  className="text-blue-600 hover:text-blue-800 text-left sm:text-center"
                   type="button"
                 >
                   {isSignup ? "Back to Sign In" : "Create account"}

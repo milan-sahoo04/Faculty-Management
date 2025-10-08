@@ -468,6 +468,7 @@ const ProfilePage: React.FC = () => {
         Teaching & Engagement Statistics
       </h3>
 
+      {/* The grid sm:grid-cols-3 handles responsiveness well */}
       <div className="grid sm:grid-cols-3 gap-6">
         <div className="p-4 bg-indigo-50 rounded-lg shadow-sm border-l-4 border-indigo-500">
           <p className="text-3xl font-bold text-indigo-700">
@@ -542,21 +543,21 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto font-sans bg-gray-50 min-h-screen">
-      <header className="mb-8 border-b border-gray-200 pb-4 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-          <User className="h-7 w-7 mr-3 text-indigo-600" />
-          Faculty Profile: {profile.name}
+      <header className="mb-8 border-b border-gray-200 pb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center mb-4 sm:mb-0">
+          <User className="h-6 w-6 sm:h-7 sm:w-7 mr-3 text-indigo-600" />
+          Faculty Profile: <span className="ml-1 truncate">{profile.name}</span>
         </h1>
-        <div className="flex space-x-3">
+        <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
           <button
-            className="flex items-center bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors shadow-md text-sm"
+            className="flex items-center justify-center bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors shadow-md text-sm w-full sm:w-auto"
             onClick={() => alert("Simulating PDF download...")}
           >
             <Download className="h-4 w-4 mr-2" />
             Export Profile
           </button>
           <button
-            className={`flex items-center px-4 py-2 rounded-lg font-semibold transition-colors shadow-md text-sm ${
+            className={`flex items-center justify-center px-4 py-2 rounded-lg font-semibold transition-colors shadow-md text-sm w-full sm:w-auto ${
               isEditing
                 ? "bg-indigo-600 text-white hover:bg-indigo-700"
                 : "bg-gray-200 text-gray-800 hover:bg-gray-300"
@@ -621,8 +622,8 @@ const ProfilePage: React.FC = () => {
           style={{ display: "none" }} // Hide the input visually
         />
 
-        {/* Tabs Navigation */}
-        <div className="mt-6 border-b border-gray-200">
+        {/* Tabs Navigation - Added overflow-x-auto to ensure scrollability on small screens */}
+        <div className="mt-6 border-b border-gray-200 overflow-x-auto">
           <nav className="-mb-px flex space-x-8" aria-label="Tabs">
             {[
               { id: "overview", label: "Overview", icon: User },
@@ -634,13 +635,13 @@ const ProfilePage: React.FC = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                                        ${
-                                          activeTab === tab.id
-                                            ? "border-indigo-500 text-indigo-600"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                                        } 
-                                        whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm flex items-center transition-colors
-                                    `}
+                                ${
+                                  activeTab === tab.id
+                                    ? "border-indigo-500 text-indigo-600"
+                                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                } 
+                                whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm flex items-center transition-colors
+                            `}
               >
                 <tab.icon className="h-5 w-5 mr-2" />
                 {tab.label}
